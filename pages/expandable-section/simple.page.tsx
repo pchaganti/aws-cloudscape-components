@@ -1,9 +1,10 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React, { useState } from 'react';
+
+import Button from '~components/button';
 import ExpandableSection from '~components/expandable-section';
 import SpaceBetween from '~components/space-between';
-import Button from '~components/button';
 import StatusIndicator from '~components/status-indicator';
 
 import ScreenshotArea from '../utils/screenshot-area';
@@ -78,6 +79,48 @@ export default function SimpleContainers() {
             Verify or edit the settings below.
           </ExpandableSection>
         </SpaceBetween>
+
+        <h2>Default with inline actions</h2>
+        <ExpandableSection
+          headerText="Volume 1 (AMI Root) (Custom) (8 GiB, EBS)"
+          headerActions={
+            <Button variant="inline-link" ariaLabel="Remove Volume 1">
+              Remove
+            </Button>
+          }
+        >
+          Configuration Form here
+        </ExpandableSection>
+        <ExpandableSection
+          headerText="Volume 2 (Custom) (8 GiB, EBS)"
+          headerActions={
+            <Button variant="inline-link" ariaLabel="Remove Volume 2">
+              Remove
+            </Button>
+          }
+        >
+          Configuration Form here
+        </ExpandableSection>
+        <ExpandableSection
+          headerText="Volume 3 (Custom) (16 GiB, EBS)"
+          headerActions={
+            <Button variant="inline-link" ariaLabel="Remove Volume 3">
+              Remove
+            </Button>
+          }
+        >
+          Configuration Form here
+        </ExpandableSection>
+        <ExpandableSection
+          headerText="Volume 4 (Custom) (64 GiB, EBS, General Purpose SSD (gp3))"
+          headerActions={
+            <Button variant="inline-link" ariaLabel="Remove Volume 4">
+              Remove
+            </Button>
+          }
+        >
+          Configuration Form here
+        </ExpandableSection>
       </ScreenshotArea>
     </article>
   );

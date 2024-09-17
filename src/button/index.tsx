@@ -1,11 +1,12 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
+
 import { getBaseProps } from '../internal/base-component';
+import useBaseComponent from '../internal/hooks/use-base-component';
+import { applyDisplayName } from '../internal/utils/apply-display-name';
 import { ButtonProps } from './interfaces';
 import { InternalButton } from './internal';
-import { applyDisplayName } from '../internal/utils/apply-display-name';
-import useBaseComponent from '../internal/hooks/use-base-component';
 
 export { ButtonProps };
 
@@ -22,6 +23,7 @@ const Button = React.forwardRef(
       loading = false,
       loadingText,
       disabled = false,
+      disabledReason,
       wrapText = true,
       href,
       target,
@@ -58,6 +60,7 @@ const Button = React.forwardRef(
         loading={loading}
         loadingText={loadingText}
         disabled={disabled}
+        disabledReason={disabledReason}
         wrapText={wrapText}
         href={href}
         target={target}
@@ -72,6 +75,7 @@ const Button = React.forwardRef(
         ariaControls={ariaControls}
         fullWidth={fullWidth}
         form={form}
+        __injectAnalyticsComponentMetadata={true}
       >
         {children}
       </InternalButton>

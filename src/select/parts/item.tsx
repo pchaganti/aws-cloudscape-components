@@ -1,15 +1,20 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import React from 'react';
+import React, { useRef } from 'react';
 import clsx from 'clsx';
-import styles from './styles.css.js';
-import Option from '../../internal/components/option';
-import SelectableItem from '../../internal/components/selectable-item';
-import { getBaseProps } from '../../internal/base-component';
-import { DropdownOption, OptionDefinition } from '../../internal/components/option/interfaces';
-import CheckboxIcon from '../../internal/components/checkbox-icon';
+
 import InternalIcon from '../../icon/internal.js';
+import { getBaseProps } from '../../internal/base-component';
+import CheckboxIcon from '../../internal/components/checkbox-icon';
+import Option from '../../internal/components/option';
+import { DropdownOption, OptionDefinition } from '../../internal/components/option/interfaces';
 import { HighlightType } from '../../internal/components/options-list/utils/use-highlight-option.js';
+import SelectableItem from '../../internal/components/selectable-item';
+import Tooltip from '../../internal/components/tooltip';
+import useHiddenDescription from '../../internal/hooks/use-hidden-description';
+import { useMergeRefs } from '../../internal/hooks/use-merge-refs';
+
+import styles from './styles.css.js';
 
 export interface ItemProps {
   option: DropdownOption;
@@ -50,6 +55,11 @@ const Item = (
   const isChild = option.type === 'child';
   const wrappedOption: OptionDefinition = option.option;
   const disabled = option.disabled || wrappedOption.disabled;
+  const disabledReason = disabled && wrappedOption.disabledReason ? wrappedOption.disabledReason : '';
+  const isDisabledWithReason = !!disabledReason;
+  const internalRef = useRef<HTMLDivElement>(null);
+
+  const { descriptionEl, descriptionId } = useHiddenDescription(disabledReason);
 
   return (
     <SelectableItem
@@ -60,13 +70,15 @@ const Item = (
       disabled={option.disabled}
       isParent={isParent}
       isChild={isChild}
-      ref={ref}
+      ref={useMergeRefs(ref, internalRef)}
       virtualPosition={virtualPosition}
       padBottom={padBottom}
       screenReaderContent={screenReaderContent}
       ariaPosinset={ariaPosinset}
       ariaSetsize={ariaSetsize}
       highlightType={highlightType}
+      ariaDescribedby={isDisabledWithReason ? descriptionId : ''}
+      value={option.option.value}
       {...baseProps}
     >
       <div className={clsx(styles.item, !isParent && wrappedOption.labelTag && styles['show-label-tag'])}>
@@ -75,20 +87,30 @@ const Item = (
             <CheckboxIcon checked={selected || false} disabled={option.disabled} />
           </div>
         )}
-        {isParent ? (
-          <span>{wrappedOption.label || wrappedOption.value}</span>
-        ) : (
-          <Option
-            option={{ ...wrappedOption, disabled }}
-            highlightedOption={highlighted}
-            selectedOption={selected}
-            highlightText={filteringValue}
-          />
-        )}
+        <Option
+          option={{ ...wrappedOption, disabled }}
+          highlightedOption={highlighted}
+          selectedOption={selected}
+          highlightText={filteringValue}
+          isGroupOption={isParent}
+        />
         {!hasCheckbox && !isParent && selected && (
           <div className={styles['selected-icon']}>
             <InternalIcon name="check" />
           </div>
+        )}
+        {isDisabledWithReason && (
+          <>
+            {descriptionEl}
+            {highlighted && (
+              <Tooltip
+                className={styles['disabled-reason-tooltip']}
+                trackRef={internalRef}
+                value={disabledReason!}
+                position="right"
+              />
+            )}
+          </>
         )}
       </div>
     </SelectableItem>

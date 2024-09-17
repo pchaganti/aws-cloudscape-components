@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import useBrowser from '@cloudscape-design/browser-test-tools/use-browser';
+
 import EventsAutosuggestPage from './page-objects/events-autosuggest-page';
 
 describe.each<boolean>([false, true])('Autosuggest events (expandToViewport=%s)', expandToViewport => {
@@ -20,7 +21,7 @@ describe.each<boolean>([false, true])('Autosuggest events (expandToViewport=%s)'
       await page.clearEventList();
 
       await page.keys(['ArrowDown', 'ArrowDown', 'Enter']);
-      await page.assertEventsFired(['onChange']);
+      await page.assertEventsFired(['onChange', 'onSelect: Option 0']);
     })
   );
 
@@ -45,7 +46,31 @@ describe.each<boolean>([false, true])('Autosuggest events (expandToViewport=%s)'
       await page.clearEventList();
 
       await page.clickOption(1);
-      await page.assertEventsFired(['onChange']);
+      await page.assertEventsFired(['onChange', 'onSelect: Option 0']);
+    })
+  );
+
+  test(
+    'should select use-entered item when highlighted',
+    setupTest(async page => {
+      await page.focusInput();
+      await page.keys(['opt']);
+      await page.clearEventList();
+
+      await page.keys(['ArrowDown', 'Enter']);
+      await page.assertEventsFired(['onChange', 'onSelect: opt']);
+    })
+  );
+
+  test(
+    'should select use-entered when pressing enter on the focused input',
+    setupTest(async page => {
+      await page.focusInput();
+      await page.keys(['opt']);
+      await page.clearEventList();
+
+      await page.keys(['Enter']);
+      await page.assertEventsFired(['onChange', 'onSelect: opt']);
     })
   );
 
@@ -91,7 +116,7 @@ describe.each<boolean>([false, true])('Autosuggest events (expandToViewport=%s)'
 
       await page.clickOption(1);
       await page.focusOutsideInput();
-      await page.assertEventsFired(['onChange', 'onBlur']);
+      await page.assertEventsFired(['onChange', 'onSelect: Option 0', 'onBlur']);
     })
   );
 
@@ -104,7 +129,7 @@ describe.each<boolean>([false, true])('Autosuggest events (expandToViewport=%s)'
 
       await page.keys(['ArrowDown', 'Enter']);
       await page.focusOutsideInput();
-      await page.assertEventsFired(['onChange', 'onBlur']);
+      await page.assertEventsFired(['onChange', 'onSelect: opt', 'onBlur']);
     })
   );
 

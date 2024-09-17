@@ -1,8 +1,9 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import useBrowser from '@cloudscape-design/browser-test-tools/use-browser';
-import createWrapper from '../../../lib/components/test-utils/selectors';
 import { BasePageObject } from '@cloudscape-design/browser-test-tools/page-objects';
+import useBrowser from '@cloudscape-design/browser-test-tools/use-browser';
+
+import createWrapper from '../../../lib/components/test-utils/selectors';
 const tableWrapper = createWrapper().findTable();
 import scrollbarStyles from '../../../lib/components/table/sticky-scrollbar/styles.selectors.js';
 
@@ -70,12 +71,13 @@ describe('Sticky scrollbar', () => {
   test(
     `scrollbar position updates when window resizes`,
     setupTest(async page => {
-      await page.setWindowSize({ width: 600, height: 400 });
+      await page.setWindowSize({ width: 600, height: 600 });
       const { bottom: bottom1 } = await page.getBoundingBox(page.findVisibleScrollbar());
-      expect(bottom1).toEqual(400);
-      await page.setWindowSize({ width: 600, height: 200 });
+      expect(bottom1).toEqual((await page.getViewportSize()).height);
+
+      await page.setWindowSize({ width: 600, height: 400 });
       const { bottom: bottom2 } = await page.getBoundingBox(page.findVisibleScrollbar());
-      expect(bottom2).toEqual(200);
+      expect(bottom1 - bottom2).toBe(200);
     })
   );
 });

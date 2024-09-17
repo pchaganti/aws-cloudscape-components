@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React, { useEffect, useRef, useState } from 'react';
+
 import { ActionButtonsController, ActionConfig, ActionContext } from '../controllers/action-buttons';
 import { RuntimeContentWrapper } from './runtime-content-wrapper';
 
@@ -18,7 +19,11 @@ function convertRuntimeAction(action: ActionConfig | null, context: ActionContex
 }
 
 export function createUseDiscoveredAction(onActionRegistered: ActionButtonsController['onActionRegistered']) {
-  return function useDiscoveredAction(type: string) {
+  return function useDiscoveredAction(type: string): {
+    discoveredActions: React.ReactNode[];
+    headerRef: React.Ref<HTMLDivElement>;
+    contentRef: React.Ref<HTMLDivElement>;
+  } {
     const [discoveredActions, setDiscoveredActions] = useState<Array<React.ReactNode>>([]);
     const headerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);

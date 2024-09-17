@@ -1,55 +1,65 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import styles from './styles.css.js';
-import clsx from 'clsx';
-import { useMergeRefs } from '../../hooks/use-merge-refs';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { fireNonCancelableEvent } from '../../events';
-import { DropdownProps } from './interfaces';
-import {
-  DropdownPosition,
-  InteriorDropdownPosition,
-  calculatePosition,
-  defaultMaxDropdownWidth,
-  hasEnoughSpaceToStretchBeyondTriggerWidth,
-} from './dropdown-fit-handler';
-import { Transition, TransitionStatus } from '../transition';
-import { useVisualRefresh } from '../../hooks/use-visual-mode';
-import { usePortalModeClasses } from '../../hooks/use-portal-mode-classes';
-import { DropdownContextProvider, DropdownContextProviderProps } from './context';
-import { useMobile } from '../../hooks/use-mobile';
-import TabTrap from '../tab-trap/index.js';
-import { getFirstFocusable, getLastFocusable } from '../focus-lock/utils.js';
-import { useUniqueId } from '../../hooks/use-unique-id/index.js';
-import customCssProps from '../../generated/custom-css-properties';
+import clsx from 'clsx';
+
 import { useResizeObserver } from '@cloudscape-design/component-toolkit/internal';
-import { nodeBelongs } from '../../utils/node-belongs';
 import { getLogicalBoundingClientRect } from '@cloudscape-design/component-toolkit/internal';
 
+import { fireNonCancelableEvent } from '../../events';
+import customCssProps from '../../generated/custom-css-properties';
+import { useMergeRefs } from '../../hooks/use-merge-refs';
+import { useMobile } from '../../hooks/use-mobile';
+import { usePortalModeClasses } from '../../hooks/use-portal-mode-classes';
+import { useUniqueId } from '../../hooks/use-unique-id/index.js';
+import { useVisualRefresh } from '../../hooks/use-visual-mode';
+import { nodeBelongs } from '../../utils/node-belongs';
+import { getFirstFocusable, getLastFocusable } from '../focus-lock/utils.js';
+import TabTrap from '../tab-trap/index.js';
+import { Transition, TransitionStatus } from '../transition';
+import { DropdownContextProvider, DropdownContextProviderProps } from './context';
+import {
+  calculatePosition,
+  defaultMaxDropdownWidth,
+  DropdownPosition,
+  hasEnoughSpaceToStretchBeyondTriggerWidth,
+  InteriorDropdownPosition,
+} from './dropdown-fit-handler';
+import { DropdownProps } from './interfaces';
+
+import styles from './styles.css.js';
+
 interface DropdownContainerProps {
+  triggerRef: React.RefObject<HTMLElement>;
   children?: React.ReactNode;
-  renderWithPortal?: boolean;
+  renderWithPortal: boolean;
   id?: string;
   referrerId?: string;
   open?: boolean;
 }
 
-const DropdownContainer = ({ children, renderWithPortal = false, id, referrerId, open }: DropdownContainerProps) => {
-  if (renderWithPortal) {
-    if (open) {
-      return createPortal(
-        <div id={id} data-awsui-referrer-id={referrerId}>
-          {children}
-        </div>,
-        document.body
-      );
-    } else {
-      return null;
-    }
-  } else {
+const DropdownContainer = ({
+  triggerRef,
+  children,
+  renderWithPortal,
+  id,
+  referrerId,
+  open,
+}: DropdownContainerProps) => {
+  if (!renderWithPortal) {
     return <>{children}</>;
   }
+  if (!open) {
+    return null;
+  }
+  const currentDocument = triggerRef.current?.ownerDocument ?? document;
+  return createPortal(
+    <div id={id} data-awsui-referrer-id={referrerId}>
+      {children}
+    </div>,
+    currentDocument.body
+  );
 };
 
 interface TransitionContentProps {
@@ -428,6 +438,7 @@ const Dropdown = ({
       />
 
       <DropdownContainer
+        triggerRef={triggerRef}
         renderWithPortal={expandToViewport && !interior}
         id={dropdownId}
         referrerId={referrerId}

@@ -2,16 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useMemo, useState } from 'react';
-import { filterOptions } from './utils/utils';
+
+import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
+
+import { useInternalI18n } from '../i18n/context';
 import { generateTestIndexes } from '../internal/components/options-list/utils/test-indexes';
-import { AutosuggestItem, AutosuggestProps } from './interfaces';
 import {
   HighlightedOptionHandlers,
   HighlightedOptionState,
   useHighlightedOption,
 } from '../internal/components/options-list/utils/use-highlight-option';
-import { useInternalI18n } from '../i18n/context';
-import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
+import { AutosuggestItem, AutosuggestProps } from './interfaces';
+import { filterOptions } from './utils/utils';
 
 type Options = AutosuggestProps.Options;
 
@@ -61,6 +63,7 @@ export const useAutosuggestItems = ({
   const enteredItemLabel = i18n('enteredTextLabel', enteredTextLabel?.(filterValue), format =>
     format({ value: filterValue })
   );
+
   if (!enteredItemLabel) {
     warnOnce('Autosuggest', 'A value for enteredTextLabel must be provided.');
   }
@@ -85,11 +88,19 @@ export const useAutosuggestItems = ({
   });
 
   const selectHighlightedOptionWithKeyboard = () => {
-    if (highlightedOptionState.highlightedOption && isInteractive(highlightedOptionState.highlightedOption)) {
-      onSelectItem(highlightedOptionState.highlightedOption);
-      return true;
+    if (highlightedOptionState.highlightedOption && !isInteractive(highlightedOptionState.highlightedOption)) {
+      // skip selection when a non-interactive item is active
+      return false;
     }
-    return false;
+    onSelectItem(
+      highlightedOptionState.highlightedOption ?? {
+        // put use-entered item as a fallback
+        value: filterValue,
+        type: 'use-entered',
+        option: { value: filterValue },
+      }
+    );
+    return true;
   };
 
   const highlightVisibleOptionWithMouse = (index: number) => {

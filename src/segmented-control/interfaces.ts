@@ -1,9 +1,10 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import { NonCancelableEventHandler } from '../internal/events';
-import { BaseComponentProps } from '../internal/base-component';
-import { IconProps } from '../icon/interfaces';
 import React from 'react';
+
+import { IconProps } from '../icon/interfaces';
+import { BaseComponentProps } from '../internal/base-component';
+import { NonCancelableEventHandler } from '../internal/events';
 
 export interface SegmentedControlProps extends BaseComponentProps {
   /**
@@ -16,6 +17,7 @@ export interface SegmentedControlProps extends BaseComponentProps {
    *
    * - `id` (string) - The ID of the segment.
    * - `disabled` [boolean] - (Optional) Determines whether the segment is disabled, which prevents the user from selecting it.
+   * - `disabledReason` (string) - (Optional) Displays tooltip near the segment when disabled. Use to provide additional context.
    * - `iconName` (string) - (Optional) Specifies the name of the icon, used with the [icon component](/components/icon/).
    * - `iconAlt` (string) - (Optional) Specifies alternate text for the icon when using `iconUrl`, or `iconName` without `text`.
    *            This is required when you use an icon without `text`.
@@ -47,6 +49,7 @@ export namespace SegmentedControlProps {
   export interface Option {
     id: string;
     disabled?: boolean;
+    disabledReason?: string;
     iconName?: IconProps.Name;
     iconAlt?: string;
     iconUrl?: string;

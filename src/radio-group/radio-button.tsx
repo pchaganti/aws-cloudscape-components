@@ -1,24 +1,41 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import clsx from 'clsx';
 import React, { useRef } from 'react';
+import clsx from 'clsx';
+
+import { copyAnalyticsMetadataAttribute } from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+
 import AbstractSwitch from '../internal/components/abstract-switch';
+import { useSingleTabStopNavigation } from '../internal/context/single-tab-stop-navigation-context';
 import { fireNonCancelableEvent, NonCancelableEventHandler } from '../internal/events';
 import { useMergeRefs } from '../internal/hooks/use-merge-refs';
 import { useVisualRefresh } from '../internal/hooks/use-visual-mode';
 import { RadioGroupProps } from './interfaces';
+
 import styles from './styles.css.js';
-import { useSingleTabStopNavigation } from '../internal/context/single-tab-stop-navigation-context';
 
 interface RadioButtonProps extends RadioGroupProps.RadioButtonDefinition {
   name: string;
   checked: boolean;
   onChange?: NonCancelableEventHandler<RadioGroupProps.ChangeDetail>;
   readOnly?: boolean;
+  className?: string;
 }
 
 export default React.forwardRef(function RadioButton(
-  { name, label, value, checked, description, disabled, controlId, onChange, readOnly }: RadioButtonProps,
+  {
+    name,
+    label,
+    value,
+    checked,
+    description,
+    disabled,
+    controlId,
+    onChange,
+    readOnly,
+    className,
+    ...rest
+  }: RadioButtonProps,
   ref: React.Ref<HTMLInputElement>
 ) {
   const isVisualRefresh = useVisualRefresh();
@@ -29,7 +46,7 @@ export default React.forwardRef(function RadioButton(
 
   return (
     <AbstractSwitch
-      className={clsx(styles.radio, description && styles['radio--has-description'])}
+      className={clsx(styles.radio, description && styles['radio--has-description'], className)}
       controlClassName={styles['radio-control']}
       outlineClassName={styles.outline}
       label={label}
@@ -37,6 +54,7 @@ export default React.forwardRef(function RadioButton(
       disabled={disabled}
       readOnly={readOnly}
       controlId={controlId}
+      {...copyAnalyticsMetadataAttribute(rest)}
       nativeControl={nativeControlProps => (
         <input
           {...nativeControlProps}

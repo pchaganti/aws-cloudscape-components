@@ -1,9 +1,14 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import clsx from 'clsx';
 import React from 'react';
-import styles from './styles.css.js';
+import clsx from 'clsx';
+
+import { getAnalyticsMetadataAttribute } from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+
 import InternalButton, { InternalButtonProps } from '../../button/internal';
+import { GeneratedAnalyticsMetadataAlertButtonClick } from '../analytics-metadata/interfaces';
+
+import styles from './styles.css.js';
 
 function createActionButton(
   testUtilClasses: ActionsWrapperProps['testUtilClasses'],
@@ -13,9 +18,15 @@ function createActionButton(
 ) {
   if (!action && buttonText) {
     action = (
-      <InternalButton className={testUtilClasses.actionButton} onClick={onButtonClick} formAction="none">
-        {buttonText}
-      </InternalButton>
+      <span
+        {...getAnalyticsMetadataAttribute({
+          action: 'buttonClick',
+        } as Partial<GeneratedAnalyticsMetadataAlertButtonClick>)}
+      >
+        <InternalButton className={testUtilClasses.actionButton} onClick={onButtonClick} formAction="none">
+          {buttonText}
+        </InternalButton>
+      </span>
     );
   }
   return action ? <div className={testUtilClasses.actionSlot}>{action}</div> : null;
@@ -30,14 +41,14 @@ interface ActionsWrapperProps {
   onButtonClick: InternalButtonProps['onClick'];
 }
 
-export function ActionsWrapper({
+export const ActionsWrapper = ({
   className,
   testUtilClasses,
   action,
   discoveredActions,
   buttonText,
   onButtonClick,
-}: ActionsWrapperProps) {
+}: ActionsWrapperProps) => {
   const actionButton = createActionButton(testUtilClasses, action, buttonText, onButtonClick);
   if (!actionButton && discoveredActions.length === 0) {
     return null;
@@ -49,4 +60,4 @@ export function ActionsWrapper({
       {discoveredActions}
     </div>
   );
-}
+};

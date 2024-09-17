@@ -1,22 +1,27 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import clsx from 'clsx';
 import React from 'react';
-import { TableProps } from './interfaces';
-import { SelectionControl, focusMarkers, SelectionProps } from './selection';
-import { fireNonCancelableEvent, NonCancelableEventHandler } from '../internal/events';
-import { getColumnKey } from './utils';
-import { TableHeaderCell } from './header-cell';
-import { useColumnWidths } from './use-column-widths';
-import { useVisualRefresh } from '../internal/hooks/use-visual-mode';
-import styles from './styles.css.js';
-import headerCellStyles from './header-cell/styles.css.js';
+import clsx from 'clsx';
+
+import { findUpUntil } from '@cloudscape-design/component-toolkit/dom';
+import { getAnalyticsMetadataAttribute } from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+
 import ScreenreaderOnly from '../internal/components/screenreader-only';
+import { fireNonCancelableEvent, NonCancelableEventHandler } from '../internal/events';
+import { useVisualRefresh } from '../internal/hooks/use-visual-mode';
+import { GeneratedAnalyticsMetadataTableSelectAll } from './analytics-metadata/interfaces';
+import { TableHeaderCell } from './header-cell';
+import { TableThElement } from './header-cell/th-element';
+import { TableProps } from './interfaces';
+import { Divider } from './resizer';
+import { focusMarkers, SelectionControl, SelectionProps } from './selection';
 import { StickyColumnsModel } from './sticky-columns';
 import { getTableHeaderRowRoleProps, TableRole } from './table-role';
-import { TableThElement } from './header-cell/th-element';
-import { findUpUntil } from '@cloudscape-design/component-toolkit/dom';
-import { Divider } from './resizer';
+import { useColumnWidths } from './use-column-widths';
+import { getColumnKey } from './utils';
+
+import headerCellStyles from './header-cell/styles.css.js';
+import styles from './styles.css.js';
 
 export interface TheadProps {
   selectionType: TableProps.SelectionType | undefined;
@@ -119,6 +124,9 @@ const Thead = React.forwardRef(
               focusedComponent={focusedComponent}
               columnId={selectionColumnId}
               stickyState={stickyState}
+              {...getAnalyticsMetadataAttribute({
+                action: 'selectAll',
+              } as Partial<GeneratedAnalyticsMetadataTableSelectAll>)}
             >
               {getSelectAllProps ? (
                 <SelectionControl

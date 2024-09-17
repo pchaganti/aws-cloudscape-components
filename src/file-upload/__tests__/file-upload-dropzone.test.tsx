@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { Dropzone, useDropzoneVisible } from '../../../lib/components/file-upload/dropzone';
-import selectors from '../../../lib/components/file-upload/dropzone/styles.selectors.js';
+
 import FileUpload, { FileUploadProps } from '../../../lib/components/file-upload';
+import { Dropzone, useDropzoneVisible } from '../../../lib/components/file-upload/dropzone';
+
+import selectors from '../../../lib/components/file-upload/dropzone/styles.selectors.js';
 
 const file1 = new File([new Blob(['Test content 1'], { type: 'text/plain' })], 'test-file-1.txt', {
   type: 'text/plain',
@@ -49,13 +51,13 @@ describe('File upload dropzone', () => {
     expect(screen.getByText('visible')).toBeDefined();
   });
 
-  test('Dropzone does not show if multiple files dragged into non-multiple zone', () => {
+  test('Dropzone shows if multiple files dragged into non-multiple zone', () => {
     render(<TestDropzoneVisible />);
     expect(screen.getByText('hidden')).toBeDefined();
 
     fireEvent(document, createDragEvent('dragover', [file1, file2]));
 
-    expect(screen.getByText('hidden')).toBeDefined();
+    expect(screen.getByText('visible')).toBeDefined();
   });
 
   test('Dropzone shows if multiple files dragged into multiple zone', () => {

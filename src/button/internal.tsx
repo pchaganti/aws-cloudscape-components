@@ -1,17 +1,14 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+import React, { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
-import React, { useEffect, useRef } from 'react';
-import { fireCancelableEvent, isPlainLeftClick } from '../internal/events';
-import useForwardFocus from '../internal/hooks/forward-focus';
-import styles from './styles.css.js';
-import { ButtonIconProps, LeftIcon, RightIcon } from './icon-helper';
-import { ButtonProps } from './interfaces';
-import { InternalBaseComponentProps } from '../internal/hooks/use-base-component';
-import { checkSafeUrl } from '../internal/utils/check-safe-url';
-import { useMergeRefs } from '../internal/hooks/use-merge-refs';
-import LiveRegion from '../internal/components/live-region';
-import { useButtonContext } from '../internal/context/button-context';
+
+import {
+  getAnalyticsLabelAttribute,
+  getAnalyticsMetadataAttribute,
+} from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+
+import { FunnelMetrics } from '../internal/analytics';
 import { useFunnel, useFunnelStep, useFunnelSubStep } from '../internal/analytics/hooks/use-funnel';
 import {
   DATA_ATTR_FUNNEL_VALUE,
@@ -19,10 +16,25 @@ import {
   getNameFromSelector,
   getSubStepAllSelector,
 } from '../internal/analytics/selectors';
-import { FunnelMetrics } from '../internal/analytics';
-import { useUniqueId } from '../internal/hooks/use-unique-id';
-import { usePerformanceMarks } from '../internal/hooks/use-performance-marks';
+import LiveRegion from '../internal/components/live-region';
+import Tooltip from '../internal/components/tooltip/index.js';
+import { useButtonContext } from '../internal/context/button-context';
 import { useSingleTabStopNavigation } from '../internal/context/single-tab-stop-navigation-context';
+import { fireCancelableEvent, isPlainLeftClick } from '../internal/events';
+import useForwardFocus from '../internal/hooks/forward-focus';
+import { InternalBaseComponentProps } from '../internal/hooks/use-base-component';
+import useHiddenDescription from '../internal/hooks/use-hidden-description';
+import { useMergeRefs } from '../internal/hooks/use-merge-refs';
+import { usePerformanceMarks } from '../internal/hooks/use-performance-marks';
+import { useUniqueId } from '../internal/hooks/use-unique-id';
+import { checkSafeUrl } from '../internal/utils/check-safe-url';
+import { GeneratedAnalyticsMetadataButtonFragment } from './analytics-metadata/interfaces';
+import { ButtonIconProps, LeftIcon, RightIcon } from './icon-helper';
+import { ButtonProps } from './interfaces';
+
+import analyticsSelectors from './analytics-metadata/styles.css.js';
+import styles from './styles.css.js';
+import testUtilStyles from './test-classes/styles.css.js';
 
 export type InternalButtonProps = Omit<ButtonProps, 'variant'> & {
   variant?: ButtonProps['variant'] | 'flashbar-icon' | 'breadcrumb-group' | 'menu-trigger' | 'modal-dismiss';
@@ -32,6 +44,9 @@ export type InternalButtonProps = Omit<ButtonProps, 'variant'> & {
     | Record<`data-${string}`, string>;
   __iconClass?: string;
   __focusable?: boolean;
+  __injectAnalyticsComponentMetadata?: boolean;
+  __title?: string;
+  __emitPerformanceMarks?: boolean;
 } & InternalBaseComponentProps<HTMLAnchorElement | HTMLButtonElement>;
 
 export const InternalButton = React.forwardRef(
@@ -50,6 +65,7 @@ export const InternalButton = React.forwardRef(
       loading = false,
       loadingText,
       disabled = false,
+      disabledReason,
       wrapText = true,
       href,
       target,
@@ -65,14 +81,20 @@ export const InternalButton = React.forwardRef(
       __nativeAttributes,
       __internalRootRef = null,
       __focusable = false,
+      __injectAnalyticsComponentMetadata = false,
+      __title,
+      __emitPerformanceMarks = true,
       ...props
     }: InternalButtonProps,
     ref: React.Ref<ButtonProps.Ref>
   ) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+
     checkSafeUrl('Button', href);
     const isAnchor = Boolean(href);
     const isNotInteractive = loading || disabled;
-    const hasAriaDisabled = (loading && !disabled) || (disabled && __focusable);
+    const isDisabledWithReason = (variant === 'normal' || variant === 'primary') && !!disabledReason && disabled;
+    const hasAriaDisabled = (loading && !disabled) || (disabled && __focusable) || isDisabledWithReason;
     const shouldHaveContent =
       children && ['icon', 'inline-icon', 'flashbar-icon', 'modal-dismiss'].indexOf(variant) === -1;
 
@@ -88,7 +110,7 @@ export const InternalButton = React.forwardRef(
 
     const performanceMarkAttributes = usePerformanceMarks(
       'primaryButton',
-      variant === 'primary',
+      variant === 'primary' && __emitPerformanceMarks,
       buttonRef,
       () => ({
         loading,
@@ -97,6 +119,8 @@ export const InternalButton = React.forwardRef(
       }),
       [loading, disabled]
     );
+
+    const { targetProps, descriptionEl } = useHiddenDescription(disabledReason);
 
     const handleClick = (event: React.MouseEvent) => {
       if (isNotInteractive) {
@@ -134,6 +158,7 @@ export const InternalButton = React.forwardRef(
       [styles['button-no-wrap']]: !wrapText,
       [styles['button-no-text']]: !shouldHaveContent,
       [styles['full-width']]: shouldHaveContent && fullWidth,
+      [styles.link]: isAnchor,
     });
 
     const explicitTabIndex =
@@ -141,6 +166,20 @@ export const InternalButton = React.forwardRef(
     const { tabIndex } = useSingleTabStopNavigation(buttonRef, {
       tabIndex: isAnchor && isNotInteractive ? -1 : explicitTabIndex,
     });
+
+    const analyticsMetadata: GeneratedAnalyticsMetadataButtonFragment = disabled
+      ? {}
+      : {
+          action: 'click',
+          detail: { label: { root: 'self' } },
+        };
+    if (__injectAnalyticsComponentMetadata) {
+      analyticsMetadata.component = {
+        name: 'awsui.Button',
+        label: { root: 'self' },
+        properties: { variant, disabled: `${disabled}` },
+      };
+    }
 
     const buttonProps = {
       ...props,
@@ -154,10 +193,12 @@ export const InternalButton = React.forwardRef(
       'aria-expanded': ariaExpanded,
       'aria-controls': ariaControls,
       // add ariaLabel as `title` as visible hint text
-      title: ariaLabel,
+      title: __title ?? ariaLabel,
       className: buttonClass,
       onClick: handleClick,
       [DATA_ATTR_FUNNEL_VALUE]: uniqueId,
+      ...getAnalyticsMetadataAttribute(analyticsMetadata),
+      ...getAnalyticsLabelAttribute(children ? `.${analyticsSelectors.label}` : ''),
     } as const;
 
     const iconProps: ButtonIconProps = {
@@ -175,7 +216,7 @@ export const InternalButton = React.forwardRef(
     const buttonContent = (
       <>
         <LeftIcon {...iconProps} />
-        {shouldHaveContent && <span className={styles.content}>{children}</span>}
+        {shouldHaveContent && <span className={clsx(styles.content, analyticsSelectors.label)}>{children}</span>}
         <RightIcon {...iconProps} />
       </>
     );
@@ -211,15 +252,33 @@ export const InternalButton = React.forwardRef(
         </>
       );
     }
+
     return (
       <>
         <button
           {...buttonProps}
           type={formAction === 'none' ? 'button' : 'submit'}
-          disabled={disabled && !__focusable}
+          disabled={disabled && !__focusable && !isDisabledWithReason}
           aria-disabled={hasAriaDisabled ? true : undefined}
+          onFocus={isDisabledWithReason ? () => setShowTooltip(true) : undefined}
+          onBlur={isDisabledWithReason ? () => setShowTooltip(false) : undefined}
+          onMouseEnter={isDisabledWithReason ? () => setShowTooltip(true) : undefined}
+          onMouseLeave={isDisabledWithReason ? () => setShowTooltip(false) : undefined}
+          {...(isDisabledWithReason ? targetProps : {})}
         >
           {buttonContent}
+          {isDisabledWithReason && (
+            <>
+              {descriptionEl}
+              {showTooltip && (
+                <Tooltip
+                  className={testUtilStyles['disabled-reason-tooltip']}
+                  trackRef={buttonRef}
+                  value={disabledReason!}
+                />
+              )}
+            </>
+          )}
         </button>
         {loading && loadingText && <LiveRegion>{loadingText}</LiveRegion>}
       </>

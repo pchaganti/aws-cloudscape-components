@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import BreadcrumbGroup from '~components/breadcrumb-group';
+
 import ScreenshotArea from '../utils/screenshot-area';
 const testCases = [
   ['First'],
@@ -30,6 +31,7 @@ export default function ButtonDropdownPage() {
           <BreadcrumbGroup
             key={index}
             ariaLabel={'Navigation' + index}
+            data-testid={`breadcrumbs-${index}`}
             expandAriaLabel="Show path"
             items={testcase.map((text, i) => ({ text, href: `#item-${index}-${i}` }))}
           />

@@ -2,15 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 import React, { useRef } from 'react';
 import clsx from 'clsx';
+
 import { InternalButton } from '../../../button/internal';
-import styles from './styles.css.js';
-import sharedStyles from '../../styles.css.js';
-import testutilStyles from '../../test-classes/styles.css.js';
-import { TOOLS_DRAWER_ID } from '../../utils/use-drawers';
 import PanelResizeHandle from '../../../internal/components/panel-resize-handle';
 import { createWidgetizedComponent } from '../../../internal/widgets';
+import { TOOLS_DRAWER_ID } from '../../utils/use-drawers';
 import { AppLayoutInternals } from '../interfaces';
 import { useResize } from './use-resize';
+
+import sharedStyles from '../../resize/styles.css.js';
+import testutilStyles from '../../test-classes/styles.css.js';
+import styles from './styles.css.js';
 
 interface AppLayoutDrawerImplementationProps {
   appLayoutInternals: AppLayoutInternals;
@@ -27,6 +29,7 @@ export function AppLayoutDrawerImplementation({ appLayoutInternals }: AppLayoutD
     drawersFocusControl,
     isMobile,
     placement,
+    verticalOffsets,
     onActiveDrawerChange,
     onActiveDrawerResize,
   } = appLayoutInternals;
@@ -38,6 +41,7 @@ export function AppLayoutDrawerImplementation({ appLayoutInternals }: AppLayoutD
     content: activeDrawer ? activeDrawer.ariaLabels?.drawerName : ariaLabels?.tools,
   };
 
+  const drawersTopOffset = verticalOffsets.drawers ?? placement.insetBlockStart;
   const isToolsDrawer = activeDrawer?.id === TOOLS_DRAWER_ID;
   const toolsOnlyMode = drawers.length === 1 && drawers[0].id === TOOLS_DRAWER_ID;
   const toolsContent = drawers?.find(drawer => drawer.id === TOOLS_DRAWER_ID)?.content;
@@ -66,22 +70,27 @@ export function AppLayoutDrawerImplementation({ appLayoutInternals }: AppLayoutD
         }
       }}
       style={{
-        blockSize: `calc(100vh - ${placement.insetBlockStart}px - ${placement.insetBlockEnd}px)`,
-        insetBlockStart: placement.insetBlockStart,
+        blockSize: `calc(100vh - ${drawersTopOffset}px - ${placement.insetBlockEnd}px)`,
+        insetBlockStart: drawersTopOffset,
       }}
     >
       {!isMobile && activeDrawer?.resizable && (
-        <PanelResizeHandle
-          ref={drawersFocusControl.refs.slider}
-          position="side"
-          className={testutilStyles['drawers-slider']}
-          ariaLabel={activeDrawer?.ariaLabels?.resizeHandle}
-          ariaValuenow={resizeProps.relativeSize}
-          onKeyDown={resizeProps.onKeyDown}
-          onPointerDown={resizeProps.onPointerDown}
-        />
+        <div className={styles['drawer-slider']}>
+          <PanelResizeHandle
+            ref={drawersFocusControl.refs.slider}
+            position="side"
+            className={testutilStyles['drawers-slider']}
+            ariaLabel={activeDrawer?.ariaLabels?.resizeHandle}
+            ariaValuenow={resizeProps.relativeSize}
+            onKeyDown={resizeProps.onKeyDown}
+            onPointerDown={resizeProps.onPointerDown}
+          />
+        </div>
       )}
-      <div className={styles['drawer-content-container']}>
+      <div
+        className={clsx(styles['drawer-content-container'], sharedStyles['with-motion'])}
+        style={{ width: isMobile ? '100%' : `${activeDrawerSize}px` }}
+      >
         <div className={clsx(styles['drawer-close-button'])}>
           <InternalButton
             ariaLabel={computedAriaLabels.closeButton}
@@ -96,16 +105,14 @@ export function AppLayoutDrawerImplementation({ appLayoutInternals }: AppLayoutD
             variant="icon"
           />
         </div>
-        {toolsContent && (
-          <div
-            className={clsx(
-              styles['drawer-content'],
-              activeDrawerId !== TOOLS_DRAWER_ID && styles['drawer-content-hidden']
-            )}
-          >
-            {toolsContent}
-          </div>
-        )}
+        <div
+          className={clsx(
+            styles['drawer-content'],
+            activeDrawerId !== TOOLS_DRAWER_ID && styles['drawer-content-hidden']
+          )}
+        >
+          {toolsContent}
+        </div>
         {activeDrawerId !== TOOLS_DRAWER_ID && <div className={styles['drawer-content']}>{activeDrawer?.content}</div>}
       </div>
     </aside>

@@ -2,25 +2,27 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import React, { useState } from 'react';
-import { addMonths, endOfDay, isAfter, isBefore, isSameMonth, startOfDay, startOfMonth } from 'date-fns';
-import styles from '../styles.css.js';
-import SpaceBetween from '../../space-between/internal';
-import { BaseComponentProps } from '../../internal/base-component';
-import { DateRangePickerProps, RangeCalendarI18nStrings } from '../interfaces';
-import CalendarHeader from './header';
-import { Grids } from './grids';
-import { TimeInputProps } from '../../time-input/interfaces';
 import clsx from 'clsx';
-import { useUniqueId } from '../../internal/hooks/use-unique-id';
+import { addMonths, endOfDay, isAfter, isBefore, isSameMonth, startOfDay, startOfMonth } from 'date-fns';
+
 import { getDateLabel, renderTimeLabel } from '../../calendar/utils/intl';
-import LiveRegion from '../../internal/components/live-region';
-import { normalizeLocale, normalizeStartOfWeek } from '../../internal/utils/locale';
-import { parseDate, splitDateTime, formatDateTime } from '../../internal/utils/date-time';
 import { getBaseDay } from '../../calendar/utils/navigation';
+import { useInternalI18n } from '../../i18n/context.js';
+import { BaseComponentProps } from '../../internal/base-component';
+import LiveRegion from '../../internal/components/live-region';
 import { useMobile } from '../../internal/hooks/use-mobile/index.js';
+import { useUniqueId } from '../../internal/hooks/use-unique-id';
+import { formatDateTime, parseDate, splitDateTime } from '../../internal/utils/date-time';
+import { normalizeLocale, normalizeStartOfWeek } from '../../internal/utils/locale';
+import SpaceBetween from '../../space-between/internal';
+import { TimeInputProps } from '../../time-input/interfaces';
+import { DateRangePickerProps, RangeCalendarI18nStrings } from '../interfaces';
+import { Grids } from './grids';
+import CalendarHeader from './header';
 import RangeInputs from './range-inputs.js';
 import { findDateToFocus, findMonthToDisplay } from './utils';
-import { useInternalI18n } from '../../i18n/context.js';
+
+import styles from '../styles.css.js';
 
 export interface DateRangePickerCalendarProps extends BaseComponentProps {
   value: DateRangePickerProps.PendingAbsoluteValue;
@@ -28,6 +30,7 @@ export interface DateRangePickerCalendarProps extends BaseComponentProps {
   locale?: string;
   startOfWeek?: number;
   isDateEnabled?: (date: Date) => boolean;
+  dateDisabledReason?: (date: Date) => string;
   i18nStrings?: RangeCalendarI18nStrings;
   dateOnly?: boolean;
   timeInputFormat?: TimeInputProps.Format;
@@ -40,6 +43,7 @@ export default function DateRangePickerCalendar({
   locale = '',
   startOfWeek,
   isDateEnabled = () => true,
+  dateDisabledReason = () => '',
   i18nStrings,
   dateOnly = false,
   timeInputFormat = 'hh:mm:ss',
@@ -238,6 +242,7 @@ export default function DateRangePickerCalendar({
               focusedDate={focusedDate}
               onFocusedDateChange={setFocusedDate}
               isDateEnabled={isDateEnabled}
+              dateDisabledReason={dateDisabledReason}
               onSelectDate={onSelectDateHandler}
               onChangeMonth={setCurrentMonth}
               startOfWeek={normalizedStartOfWeek}

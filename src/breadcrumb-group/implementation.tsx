@@ -1,21 +1,30 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
-import styles from './styles.css.js';
 import clsx from 'clsx';
-import InternalIcon from '../icon/internal';
-import InternalButtonDropdown from '../button-dropdown/internal';
-import { CustomTriggerProps, LinkItem } from '../button-dropdown/interfaces';
+
+import { getAnalyticsMetadataAttribute } from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+
 import { InternalButton } from '../button/internal';
-import { BreadcrumbItem } from './item/item';
-import { BreadcrumbGroupProps, EllipsisDropdownProps, InternalBreadcrumbGroupProps } from './interfaces';
-import { fireCancelableEvent } from '../internal/events';
+import { CustomTriggerProps, LinkItem } from '../button-dropdown/interfaces';
+import InternalButtonDropdown from '../button-dropdown/internal';
+import { useInternalI18n } from '../i18n/context';
+import InternalIcon from '../icon/internal';
 import { getBaseProps } from '../internal/base-component';
+import { fireCancelableEvent } from '../internal/events';
 import { useMobile } from '../internal/hooks/use-mobile';
 import { checkSafeUrl } from '../internal/utils/check-safe-url';
-import { useInternalI18n } from '../i18n/context';
 import { createWidgetizedComponent } from '../internal/widgets';
+import {
+  GeneratedAnalyticsMetadataBreadcrumbGroupClick,
+  GeneratedAnalyticsMetadataBreadcrumbGroupComponent,
+} from './analytics-metadata/interfaces';
+import { BreadcrumbGroupProps, EllipsisDropdownProps, InternalBreadcrumbGroupProps } from './interfaces';
+import { BreadcrumbItem } from './item/item';
 import { getEventDetail } from './utils';
+
+import analyticsSelectors from './analytics-metadata/styles.css.js';
+import styles from './styles.css.js';
 
 /**
  * Provided for backwards compatibility
@@ -66,6 +75,16 @@ const EllipsisDropdown = ({
         onItemClick={onDropdownItemClick}
         onItemFollow={onDropdownItemFollow}
         customTriggerBuilder={getDropdownTrigger}
+        linkStyle={true}
+        analyticsMetadataTransformer={metadata => {
+          if (metadata.detail?.id) {
+            delete metadata.detail.id;
+          }
+          if (metadata.detail?.position) {
+            metadata.detail.position = `${parseInt(metadata.detail.position as string, 10) + 1}`;
+          }
+          return metadata;
+        }}
       />
       <span className={styles.icon}>
         <InternalIcon name="angle-right" />
@@ -81,6 +100,7 @@ export function BreadcrumbGroupImplementation<T extends BreadcrumbGroupProps.Ite
   onClick,
   onFollow,
   __internalRootRef,
+  __injectAnalyticsComponentMetadata,
   ...props
 }: InternalBreadcrumbGroupProps<T>) {
   for (const item of items) {
@@ -92,8 +112,21 @@ export function BreadcrumbGroupImplementation<T extends BreadcrumbGroupProps.Ite
   let breadcrumbItems = items.map((item, index) => {
     const isLast = index === items.length - 1;
 
+    const clickAnalyticsMetadata: GeneratedAnalyticsMetadataBreadcrumbGroupClick = {
+      action: 'click',
+      detail: {
+        position: `${index + 1}`,
+        label: `.${analyticsSelectors['breadcrumb-item']}`,
+        href: item.href || '',
+      },
+    };
+
     return (
-      <li className={styles.item} key={index}>
+      <li
+        className={styles.item}
+        key={index}
+        {...(isLast ? {} : getAnalyticsMetadataAttribute(clickAnalyticsMetadata))}
+      >
         <BreadcrumbItem
           item={item}
           onClick={onClick}
@@ -134,6 +167,11 @@ export function BreadcrumbGroupImplementation<T extends BreadcrumbGroupProps.Ite
     ];
   }
 
+  const componentAnalyticsMetadata: GeneratedAnalyticsMetadataBreadcrumbGroupComponent = {
+    name: 'awsui.BreadcrumbGroup',
+    label: { root: 'self' },
+  };
+
   return (
     <nav
       {...baseProps}
@@ -145,6 +183,13 @@ export function BreadcrumbGroupImplementation<T extends BreadcrumbGroupProps.Ite
       )}
       aria-label={ariaLabel || undefined}
       ref={__internalRootRef}
+      {...(__injectAnalyticsComponentMetadata
+        ? {
+            ...getAnalyticsMetadataAttribute({
+              component: componentAnalyticsMetadata,
+            }),
+          }
+        : {})}
     >
       <ol className={styles['breadcrumb-group-list']}>{breadcrumbItems}</ol>
     </nav>

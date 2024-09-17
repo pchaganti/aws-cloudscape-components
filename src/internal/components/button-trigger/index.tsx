@@ -2,10 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 import React, { ButtonHTMLAttributes } from 'react';
 import clsx from 'clsx';
-import { BaseComponentProps, getBaseProps } from '../../base-component';
+
+import { getAnalyticsMetadataAttribute } from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+
 import InternalIcon from '../../../icon/internal';
+import { BaseComponentProps, getBaseProps } from '../../base-component';
+import { BaseKeyDetail, CancelableEventHandler, fireCancelableEvent, fireKeyboardEvent } from '../../events';
+import { GeneratedAnalyticsMetadataButtonTriggerExpand } from './analytics-metadata/interfaces';
+
+import analyticsSelectors from './analytics-metadata/styles.css.js';
 import styles from './styles.css.js';
-import { fireKeyboardEvent, fireCancelableEvent, CancelableEventHandler, BaseKeyDetail } from '../../events';
 
 export interface ButtonTriggerProps extends BaseComponentProps {
   children?: React.ReactNode;
@@ -64,6 +70,7 @@ const ButtonTrigger = (
     type: 'button',
     className: clsx(
       styles['button-trigger'],
+      analyticsSelectors['button-trigger'],
       baseProps.className,
       pressed && styles.pressed,
       disabled && styles.disabled,
@@ -101,8 +108,20 @@ const ButtonTrigger = (
     attributes['aria-invalid'] = invalid;
   }
 
+  const analyticsMetadata: GeneratedAnalyticsMetadataButtonTriggerExpand = {
+    action: 'expand',
+    detail: {
+      label: { root: 'self' },
+      expanded: `${!pressed}`,
+    },
+  };
+
   return (
-    <button ref={ref} {...attributes}>
+    <button
+      ref={ref}
+      {...attributes}
+      {...(disabled || readOnly ? {} : getAnalyticsMetadataAttribute(analyticsMetadata))}
+    >
       {children}
       {!hideCaret && (
         <span className={styles.arrow}>

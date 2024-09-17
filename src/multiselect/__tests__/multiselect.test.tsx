@@ -2,13 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import createWrapper from '../../../lib/components/test-utils/dom';
-import Multiselect, { MultiselectProps } from '../../../lib/components/multiselect';
-import tokenGroupStyles from '../../../lib/components/token-group/styles.css.js';
-import selectPartsStyles from '../../../lib/components/select/parts/styles.css.js';
-import '../../__a11y__/to-validate-a11y';
-import statusIconStyles from '../../../lib/components/status-indicator/styles.selectors.js';
+
 import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
+import { KeyCode } from '@cloudscape-design/test-utils-core/utils';
+
+import '../../__a11y__/to-validate-a11y';
+import Multiselect, { MultiselectProps } from '../../../lib/components/multiselect';
+import createWrapper from '../../../lib/components/test-utils/dom';
+
+import selectPartsStyles from '../../../lib/components/select/parts/styles.css.js';
+import tokenGroupStyles from '../../../lib/components/token-group/styles.css.js';
+import statusIconStyles from '../../../lib/components/status-indicator/styles.selectors.js';
 
 const defaultOptions: MultiselectProps.Options = [
   { label: 'First', value: '1' },
@@ -696,4 +700,119 @@ describe('With inline tokens (private API)', () => {
     expect(wrapper.findTrigger().getElement()).toHaveTextContent('Third');
     expect(wrapper.findTrigger().getElement()).toHaveTextContent('(3)');
   });
+});
+
+describe('Disabled item with reason', () => {
+  test('has no tooltip open by default', () => {
+    const { wrapper } = renderMultiselect(
+      <Multiselect
+        options={[{ label: 'First', value: '1', disabled: true, disabledReason: 'disabled reason' }]}
+        selectedOptions={[]}
+      />
+    );
+    wrapper.openDropdown();
+
+    expect(wrapper.findDropdown().findOption(1)!.findDisabledReason()).toBe(null);
+  });
+
+  test('has no tooltip without disabledReason', () => {
+    const { wrapper } = renderMultiselect(
+      <Multiselect options={[{ label: 'First', value: '1', disabled: true }]} selectedOptions={[]} />
+    );
+    wrapper.openDropdown();
+    wrapper.findTrigger()!.keydown(KeyCode.down);
+
+    expect(wrapper.findDropdown().findOption(1)!.findDisabledReason()).toBe(null);
+  });
+
+  test('open tooltip when the item is highlighted', () => {
+    const { wrapper } = renderMultiselect(
+      <Multiselect
+        options={[{ label: 'First', value: '1', disabled: true, disabledReason: 'disabled reason' }]}
+        selectedOptions={[]}
+      />
+    );
+    wrapper.openDropdown();
+    wrapper.findTrigger().keydown(KeyCode.down);
+
+    expect(wrapper.findDropdown().findOption(1)!.findDisabledReason()!.getElement()).toHaveTextContent(
+      'disabled reason'
+    );
+  });
+
+  test('has no disabledReason a11y attributes by default', () => {
+    const { wrapper } = renderMultiselect(<Multiselect options={defaultOptions} selectedOptions={[]} />);
+    wrapper.openDropdown();
+
+    expect(wrapper.findDropdown()!.find('[data-test-index="1"]')!.getElement()).not.toHaveAttribute('aria-describedby');
+    expect(wrapper.findDropdown()!.find('[data-test-index="1"]')!.find('span[hidden]')).toBe(null);
+  });
+
+  test('has disabledReason a11y attributes', () => {
+    const { wrapper } = renderMultiselect(
+      <Multiselect
+        options={[{ label: 'First', value: '1', disabled: true, disabledReason: 'disabled reason' }]}
+        selectedOptions={[]}
+      />
+    );
+    wrapper.openDropdown();
+
+    expect(wrapper.findDropdown()!.find('[data-test-index="1"]')!.getElement()).toHaveAttribute('aria-describedby');
+    expect(wrapper.findDropdown()!.find('[data-test-index="1"]')!.find('span[hidden]')!.getElement()).toHaveTextContent(
+      'disabled reason'
+    );
+  });
+
+  test('can not select disabled with reason option', () => {
+    const onChange = jest.fn();
+    const { wrapper } = renderMultiselect(
+      <Multiselect
+        options={[{ label: 'First', value: '1', disabled: true, disabledReason: 'disabled reason' }]}
+        selectedOptions={[]}
+      />
+    );
+    wrapper.openDropdown();
+    wrapper.selectOptionByValue('1');
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+test('group options can have description, label tag, tags, disabled reason', () => {
+  const { wrapper } = renderMultiselect(
+    <Multiselect
+      options={[
+        {
+          label: 'First category',
+          value: 'group1',
+          options: [{ value: '1.1' }],
+        },
+        {
+          label: 'Second category',
+          value: 'group2',
+          description: 'Description',
+          labelTag: 'Label tag',
+          tags: ['Tag 1', 'Tag 2'],
+          disabled: true,
+          disabledReason: 'Disabled reason',
+          options: [{ value: '2.1' }],
+        },
+      ]}
+      selectedOptions={[]}
+    />
+  );
+  wrapper.openDropdown();
+
+  // Moving focus to the second group to make the disabled reason visible.
+  wrapper.findTrigger()!.keydown(KeyCode.down);
+  wrapper.findDropdown().find('ul')!.keydown(KeyCode.down);
+  wrapper.findDropdown().find('ul')!.keydown(KeyCode.down);
+
+  const groupOption = wrapper.findDropdown().findOptionByValue('group2')!;
+
+  expect(groupOption.findLabel()!.getElement().textContent).toBe('Second category');
+  expect(groupOption.findDescription()!.getElement().textContent).toBe('Description');
+  expect(groupOption.findLabelTag()!.getElement().textContent).toBe('Label tag');
+  expect(groupOption.findTags()![0].getElement().textContent).toBe('Tag 1');
+  expect(groupOption.findTags()![1].getElement().textContent).toBe('Tag 2');
+  expect(groupOption.findDisabledReason()!.getElement().textContent).toBe('Disabled reason');
 });

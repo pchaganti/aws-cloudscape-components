@@ -1,14 +1,16 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
-import clsx from 'clsx';
 import flattenChildren from 'react-keyed-flatten-children';
-import InternalGrid from '../grid/internal';
+import clsx from 'clsx';
+
 import { GridProps } from '../grid/interfaces';
+import InternalGrid from '../grid/internal';
 import { useContainerBreakpoints } from '../internal/hooks/container-queries';
-import { repeat } from './util';
 import { InternalColumnLayoutProps } from './interfaces';
 import { COLUMN_TRIGGERS, ColumnLayoutBreakpoint } from './internal';
+import { repeat } from './util';
+
 import styles from './styles.css.js';
 
 const COLUMN_DEFS: Record<number, GridProps.ElementDefinition | undefined> = {
@@ -19,7 +21,8 @@ const COLUMN_DEFS: Record<number, GridProps.ElementDefinition | undefined> = {
 };
 
 interface GridColumnLayoutProps
-  extends Required<Pick<InternalColumnLayoutProps, 'columns' | 'variant' | 'borders' | 'disableGutters'>> {
+  extends Required<Pick<InternalColumnLayoutProps, 'columns' | 'variant' | 'borders' | 'disableGutters'>>,
+    Pick<InternalColumnLayoutProps, '__tagOverride'> {
   children: React.ReactNode;
   __breakpoint?: ColumnLayoutBreakpoint;
 }
@@ -31,6 +34,7 @@ export default function GridColumnLayout({
   disableGutters,
   __breakpoint,
   children,
+  __tagOverride,
 }: GridColumnLayoutProps) {
   const isTextGridVariant = variant === 'text-grid';
   const shouldDisableGutters = !isTextGridVariant && disableGutters;
@@ -54,6 +58,7 @@ export default function GridColumnLayout({
       })}
       __breakpoint={__breakpoint || breakpoint}
       __responsiveClassName={breakpoint => breakpoint && styles[`grid-breakpoint-${breakpoint}`]}
+      __tagOverride={__tagOverride}
     >
       {children}
     </InternalGrid>

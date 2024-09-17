@@ -1,22 +1,24 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import React, { useContext, useState } from 'react';
+import React, { useContext, useRef, useState } from 'react';
+
 import {
   AppLayout,
   ContentLayout,
+  Drawer,
   Header,
   HelpPanel,
-  Drawer,
   Link,
   SpaceBetween,
   SplitPanel,
   Toggle,
 } from '~components';
-import appLayoutLabels from './utils/labels';
 import { AppLayoutProps } from '~components/app-layout';
-import { Breadcrumbs, Containers } from './utils/content-blocks';
+
 import './utils/external-widget';
 import AppContext, { AppContextType } from '../app/app-context';
+import { Breadcrumbs, Containers } from './utils/content-blocks';
+import appLayoutLabels from './utils/labels';
 
 type DemoContext = React.Context<
   AppContextType<{
@@ -33,6 +35,7 @@ export default function WithDrawers() {
   const hasTools = urlParams.hasTools ?? false;
   const hasDrawers = urlParams.hasDrawers ?? true;
   const [isToolsOpen, setIsToolsOpen] = useState(false);
+  const appLayoutRef = useRef<AppLayoutProps.Ref>(null);
 
   const drawersProps: Pick<AppLayoutProps, 'activeDrawerId' | 'onDrawerChange' | 'drawers'> | null = !hasDrawers
     ? null
@@ -62,6 +65,7 @@ export default function WithDrawers() {
     <AppLayout
       ariaLabels={appLayoutLabels}
       breadcrumbs={<Breadcrumbs />}
+      ref={appLayoutRef}
       content={
         <ContentLayout
           disableOverlap={true}
@@ -77,6 +81,7 @@ export default function WithDrawers() {
                     onFollow={() => {
                       setHelpPathSlug('header');
                       setIsToolsOpen(true);
+                      appLayoutRef.current?.focusToolsClose();
                     }}
                   >
                     Info

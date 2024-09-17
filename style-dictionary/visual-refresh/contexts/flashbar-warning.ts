@@ -1,9 +1,10 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+import merge from 'lodash/merge';
+
+import { expandColorDictionary, pickState } from '../../utils';
 import { StyleDictionary } from '../../utils/interfaces';
 import { tokens as parentTokens } from '../colors';
-import merge from 'lodash/merge';
-import { expandColorDictionary, pickState } from '../../utils';
 import { alertButtonTokens } from './alert';
 
 // Token configuration that is shared between classic and visual refresh
@@ -19,6 +20,11 @@ export const sharedTokens: StyleDictionary.ColorsDictionary = {
   // Dismiss button
   colorTextInteractiveInvertedDefault: '{colorGrey600}',
   colorTextInteractiveInvertedHover: '{colorGrey900}',
+
+  // Progress bars in flashbars should be using variant="flash" (which uses a white background by default).
+  // For the warning state, it should use colorGrey900.
+  colorBackgroundProgressBarContentInFlash: '{colorGrey900}',
+  colorBackgroundProgressBarLayoutInFlash: '{colorGreyOpaque10}',
 
   // Expandable sections
   colorTextExpandableSectionDefault: '{colorTextNotificationYellow}',

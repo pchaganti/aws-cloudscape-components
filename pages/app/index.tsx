@@ -4,21 +4,23 @@ import React, { Suspense, useContext, useEffect } from 'react';
 import { render } from 'react-dom';
 import { HashRouter, Redirect } from 'react-router-dom';
 import { createHashHistory } from 'history';
-import { applyMode, applyDensity, disableMotion } from '@cloudscape-design/global-styles';
+
+import { applyDensity, applyMode, disableMotion } from '@cloudscape-design/global-styles';
+
+import AppContext, { AppContextProvider, parseQuery } from './app-context';
+import Header from './components/header';
+import IndexPage from './components/index-page';
+import PageView from './components/page-view';
+import StrictModeWrapper from './components/strict-mode-wrapper';
 
 // import font-size reset and Ember font
 import '@cloudscape-design/global-styles/index.css';
 // screenshot test overrides
 import styles from './styles.scss';
 
-import PageView from './components/page-view';
-import IndexPage from './components/index-page';
-import Header from './components/header';
-import StrictModeWrapper from './components/strict-mode-wrapper';
-import AppContext, { AppContextProvider, parseQuery } from './app-context';
-
 interface GlobalFlags {
   appLayoutWidget?: boolean;
+  appLayoutToolbar?: boolean;
 }
 const awsuiVisualRefreshFlag = Symbol.for('awsui-visual-refresh-flag');
 const awsuiGlobalFlagsSymbol = Symbol.for('awsui-global-flags');
@@ -36,6 +38,7 @@ function isAppLayoutPage(pageId?: string) {
     'grid-navigation-custom',
     'expandable-rows-test',
     'container/sticky-permutations',
+    'copy-to-clipboard/scenario-split-panel',
   ];
   return pageId !== undefined && appLayoutPages.some(match => pageId.includes(match));
 }
@@ -89,7 +92,7 @@ function App() {
 }
 
 const history = createHashHistory();
-const { direction, visualRefresh, appLayoutWidget } = parseQuery(history.location.search);
+const { direction, visualRefresh, appLayoutWidget, appLayoutToolbar } = parseQuery(history.location.search);
 
 // The VR class needs to be set before any React rendering occurs.
 window[awsuiVisualRefreshFlag] = () => visualRefresh;
@@ -97,6 +100,7 @@ if (!window[awsuiGlobalFlagsSymbol]) {
   window[awsuiGlobalFlagsSymbol] = {};
 }
 window[awsuiGlobalFlagsSymbol].appLayoutWidget = appLayoutWidget;
+window[awsuiGlobalFlagsSymbol].appLayoutToolbar = appLayoutToolbar;
 
 // Apply the direction value to the HTML element dir attribute
 document.documentElement.setAttribute('dir', direction);

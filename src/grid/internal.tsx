@@ -1,17 +1,20 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
-import clsx, { ClassValue } from 'clsx';
 import flattenChildren from 'react-keyed-flatten-children';
+import clsx, { ClassValue } from 'clsx';
+
+import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
+
 import { getBaseProps } from '../internal/base-component';
 import { Breakpoint, matchBreakpointMapping } from '../internal/breakpoints';
-import { isDevelopment } from '../internal/is-development';
-import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
-import styles from './styles.css.js';
-import { GridProps } from './interfaces';
 import { useContainerBreakpoints } from '../internal/hooks/container-queries';
 import { InternalBaseComponentProps } from '../internal/hooks/use-base-component';
 import { useMergeRefs } from '../internal/hooks/use-merge-refs';
+import { isDevelopment } from '../internal/is-development';
+import { GridProps } from './interfaces';
+
+import styles from './styles.css.js';
 
 export interface InternalGridProps extends GridProps, InternalBaseComponentProps {
   __breakpoint?: Breakpoint | null;
@@ -20,6 +23,10 @@ export interface InternalGridProps extends GridProps, InternalBaseComponentProps
    * The handler that fires when the grid breakpoint changes.
    */
   __responsiveClassName?: (breakpoint: Breakpoint | null) => ClassValue;
+  /**
+   * Overrides the default wrapper HTML tag.
+   */
+  __tagOverride?: string;
 }
 
 const InternalGrid = React.forwardRef(
@@ -29,6 +36,7 @@ const InternalGrid = React.forwardRef(
       gridDefinition = [],
       disableGutters = false,
       children,
+      __tagOverride,
       __responsiveClassName,
       __internalRootRef = null,
       ...restProps
@@ -47,6 +55,7 @@ const InternalGrid = React.forwardRef(
    Flattening the children allows us to "see through" React Fragments and nested arrays.
    */
     const flattenedChildren = flattenChildren(children);
+    const Tag = (__tagOverride ?? 'div') as 'div';
 
     if (isDevelopment) {
       const columnCount = gridDefinition.length;
@@ -62,7 +71,7 @@ const InternalGrid = React.forwardRef(
     const mergedRef = useMergeRefs(defaultRef, __internalRootRef);
 
     return (
-      <div
+      <Tag
         {...baseProps}
         className={clsx(
           styles.grid,
@@ -92,7 +101,7 @@ const InternalGrid = React.forwardRef(
             </div>
           );
         })}
-      </div>
+      </Tag>
     );
   }
 );

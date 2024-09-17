@@ -1,34 +1,38 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
-import { fireNonCancelableEvent } from '../internal/events';
-import { getBaseProps } from '../internal/base-component';
+
+import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
+
 import InternalBox from '../box/internal';
 import { ButtonProps } from '../button/interfaces';
 import { InternalButton } from '../button/internal';
+import { useInternalI18n } from '../i18n/context';
+import { getBaseProps } from '../internal/base-component';
+import { CollectionPreferencesMetadata } from '../internal/context/collection-preferences-metadata-context';
+import { fireNonCancelableEvent } from '../internal/events';
+import checkControlled from '../internal/hooks/check-controlled';
+import useBaseComponent from '../internal/hooks/use-base-component';
+import { applyDisplayName } from '../internal/utils/apply-display-name';
 import InternalModal from '../modal/internal';
 import InternalSpaceBetween from '../space-between/internal';
+import ContentDisplayPreference from './content-display';
+import { CollectionPreferencesProps } from './interfaces';
 import {
+  ContentDensityPreference,
   copyPreferences,
+  CustomPreference,
   mergePreferences,
   ModalContentLayout,
   PageSizePreference,
-  WrapLinesPreference,
-  StripedRowsPreference,
-  ContentDensityPreference,
   StickyColumnsPreference,
-  CustomPreference,
+  StripedRowsPreference,
+  WrapLinesPreference,
 } from './utils';
 import VisibleContentPreference from './visible-content';
-import checkControlled from '../internal/hooks/check-controlled';
-import { CollectionPreferencesProps } from './interfaces';
+
 import styles from './styles.css.js';
-import { applyDisplayName } from '../internal/utils/apply-display-name';
-import useBaseComponent from '../internal/hooks/use-base-component';
-import ContentDisplayPreference from './content-display';
-import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
-import { useInternalI18n } from '../i18n/context';
 
 export { CollectionPreferencesProps };
 
@@ -55,7 +59,18 @@ export default function CollectionPreferences({
   removeModalRoot,
   ...rest
 }: CollectionPreferencesProps) {
-  const { __internalRootRef } = useBaseComponent('CollectionPreferences');
+  const parentMetadata = useContext(CollectionPreferencesMetadata);
+  const { __internalRootRef } = useBaseComponent('CollectionPreferences', {
+    props: {},
+    metadata: {
+      ...parentMetadata,
+      hasStripedRowsPreference: !!stripedRowsPreference,
+      hasVisibleContentPreference: !!visibleContentPreference,
+      hasContentDisplayPreference: !!contentDisplayPreference,
+      hasContentDensityPreference: !!contentDensityPreference,
+      hasStickyColumnsPreference: !!stickyColumnsPreference,
+    },
+  });
   checkControlled('CollectionPreferences', 'preferences', preferences, 'onConfirm', onConfirm);
 
   const i18n = useInternalI18n('collection-preferences');

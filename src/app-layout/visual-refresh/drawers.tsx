@@ -2,19 +2,31 @@
 // SPDX-License-Identifier: Apache-2.0
 import React, { useRef } from 'react';
 import clsx from 'clsx';
-import customCssProps from '../../internal/generated/custom-css-properties';
+
+import { useContainerQuery } from '@cloudscape-design/component-toolkit';
+
 import { InternalButton } from '../../button/internal';
+import customCssProps from '../../internal/generated/custom-css-properties';
+import { getLimitedValue } from '../../split-panel/utils/size-utils';
+import { splitItems } from '../drawer/drawers-helpers';
+import OverflowMenu from '../drawer/overflow-menu';
+import { TOOLS_DRAWER_ID } from '../utils/use-drawers';
+import { useAppLayoutInternals } from './context';
 import SplitPanel from './split-panel';
 import TriggerButton from './trigger-button';
-import { useAppLayoutInternals } from './context';
-import styles from './styles.css.js';
-import testutilStyles from '../test-classes/styles.css.js';
+
 import splitPanelTestUtilStyles from '../../split-panel/test-classes/styles.css.js';
-import { useContainerQuery } from '@cloudscape-design/component-toolkit';
-import OverflowMenu from '../drawer/overflow-menu';
-import { splitItems } from '../drawer/drawers-helpers';
-import { TOOLS_DRAWER_ID } from '../utils/use-drawers';
-import { getLimitedValue } from '../../split-panel/utils/size-utils';
+import testutilStyles from '../test-classes/styles.css.js';
+import styles from './styles.css.js';
+
+/**
+ * The VISIBLE_MOBILE_TOOLBAR_TRIGGERS_LIMIT is used to reduce the number
+ * of triggers that are initially visible on the mobile toolbar, the rest
+ * are then placed into an overflow menu
+ *
+ * Note if one of the triggers is for a split-panel, it would not count that
+ */
+export const VISIBLE_MOBILE_TOOLBAR_TRIGGERS_LIMIT = 2;
 
 /**
  * The Drawers root component is mounted in the AppLayout index file. It will only
@@ -247,10 +259,10 @@ function DesktopTriggers() {
               key={item.id}
               onClick={() => handleDrawersClick(item.id)}
               ref={item.id === previousActiveDrawerId.current ? drawersRefs.toggle : undefined}
-              selected={item.id === activeDrawerId}
               badge={item.badge}
               testId={`awsui-app-layout-trigger-${item.id}`}
               highContrastHeader={headerVariant === 'high-contrast'}
+              selected={item.id === activeDrawerId}
             />
           );
         })}
@@ -310,6 +322,7 @@ export function MobileTriggers() {
     drawersRefs,
     handleDrawersClick,
     hasDrawerViewportOverlay,
+    headerVariant,
   } = useAppLayoutInternals();
 
   const previousActiveDrawerId = useRef(activeDrawerId);
@@ -322,7 +335,7 @@ export function MobileTriggers() {
     previousActiveDrawerId.current = activeDrawerId;
   }
 
-  const { visibleItems, overflowItems } = splitItems(drawers, 2, activeDrawerId);
+  const { visibleItems, overflowItems } = splitItems(drawers, VISIBLE_MOBILE_TOOLBAR_TRIGGERS_LIMIT, activeDrawerId);
   const overflowMenuHasBadge = !!overflowItems.find(item => item.badge);
 
   return (
@@ -336,24 +349,26 @@ export function MobileTriggers() {
     >
       <div className={styles['drawers-mobile-triggers-container']} role="toolbar" aria-orientation="horizontal">
         {visibleItems.map(item => (
-          <InternalButton
+          <TriggerButton
             ariaExpanded={item.id === activeDrawerId}
             ariaLabel={item.ariaLabels?.triggerButton}
+            ariaControls={activeDrawerId === item.id ? item.id : undefined}
             className={clsx(
+              `awsui-app-layout-trigger-${item.id}`,
               styles['drawers-trigger'],
               testutilStyles['drawers-trigger'],
               item.id === TOOLS_DRAWER_ID && testutilStyles['tools-toggle']
             )}
             disabled={hasDrawerViewportOverlay}
             ref={item.id === previousActiveDrawerId.current ? drawersRefs.toggle : undefined}
-            formAction="none"
             iconName={item.trigger.iconName}
             iconSvg={item.trigger.iconSvg}
             badge={item.badge}
             key={item.id}
             onClick={() => handleDrawersClick(item.id)}
-            variant="icon"
-            __nativeAttributes={{ 'aria-haspopup': true, 'data-testid': `awsui-app-layout-trigger-${item.id}` }}
+            testId={`awsui-app-layout-trigger-${item.id}`}
+            highContrastHeader={headerVariant === 'high-contrast'}
+            selected={item.id === activeDrawerId}
           />
         ))}
         {overflowItems.length > 0 && (

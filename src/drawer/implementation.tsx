@@ -1,15 +1,18 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import clsx from 'clsx';
 import React from 'react';
-import { getBaseProps } from '../internal/base-component';
-import InternalStatusIndicator from '../status-indicator/internal';
-import styles from './styles.css.js';
-import { DrawerProps } from './interfaces';
-import LiveRegion from '../internal/components/live-region';
+import clsx from 'clsx';
+
+import { useAppLayoutToolbarEnabled } from '../app-layout/utils/feature-flags';
 import { useInternalI18n } from '../i18n/context';
+import { getBaseProps } from '../internal/base-component';
+import LiveRegion from '../internal/components/live-region';
 import { InternalBaseComponentProps } from '../internal/hooks/use-base-component';
 import { createWidgetizedComponent } from '../internal/widgets';
+import InternalStatusIndicator from '../status-indicator/internal';
+import { DrawerProps } from './interfaces';
+
+import styles from './styles.css.js';
 
 export type DrawerInternalProps = DrawerProps & InternalBaseComponentProps;
 
@@ -22,10 +25,11 @@ export function DrawerImplementation({
   ...restProps
 }: DrawerInternalProps) {
   const baseProps = getBaseProps(restProps);
+  const isToolbar = useAppLayoutToolbarEnabled();
   const i18n = useInternalI18n('drawer');
   const containerProps = {
     ...baseProps,
-    className: clsx(baseProps.className, styles.drawer),
+    className: clsx(baseProps.className, styles.drawer, isToolbar && styles['with-toolbar']),
   };
   return loading ? (
     <div {...containerProps} ref={__internalRootRef}>

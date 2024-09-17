@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { initAwsUiVersions } from '@cloudscape-design/component-toolkit/internal';
+
+import { AnalyticsMetadata } from '../analytics/interfaces';
 import { PACKAGE_SOURCE, PACKAGE_VERSION } from '../environment';
 
 // these styles needed to be imported for every public component
 import './styles.css.js';
-import { AnalyticsMetadata } from '../analytics/interfaces';
 
 initAwsUiVersions(PACKAGE_SOURCE, PACKAGE_VERSION);
 
@@ -39,9 +40,14 @@ export function getBaseProps(props: BaseComponentProps) {
 }
 
 export interface BasePropsWithAnalyticsMetadata {
+  analyticsMetadata?: AnalyticsMetadata;
   __analyticsMetadata?: AnalyticsMetadata;
 }
 
-export function getAnalyticsMetadataProps(props?: unknown) {
-  return (props as BasePropsWithAnalyticsMetadata | undefined)?.__analyticsMetadata;
+/**
+ * Helper function to merge beta analytics metadata with the public analytics metadata api.
+ * Beta analytics metadata will override the public values to allow for safe migration.
+ */
+export function getAnalyticsMetadataProps(props?: BasePropsWithAnalyticsMetadata) {
+  return { ...props?.analyticsMetadata, ...props?.__analyticsMetadata };
 }

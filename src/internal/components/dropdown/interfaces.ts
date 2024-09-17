@@ -1,7 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import { NonCancelableEventHandler } from '../../events';
 import React from 'react';
+
+import { NonCancelableEventHandler } from '../../events';
 
 export type OptionsFilteringType = 'none' | 'auto' | 'manual';
 export interface OptionsLoadItemsDetail {
@@ -165,7 +166,7 @@ export interface ExpandToViewport {
    * Set this property if the dropdown would otherwise be constrained by a scrollable container,
    * for example inside table and split view layouts.
    *
-   * However, use discretion. We recommend you don't enable this property unless necessary
+   * We recommend you use discretion, and don't enable this property unless necessary
    * because fixed positioning results in a slight, visible lag when scrolling complex pages.
    */
   expandToViewport?: boolean;

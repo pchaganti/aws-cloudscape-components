@@ -2,31 +2,34 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import React, { useEffect, useRef, useState } from 'react';
+import clsx from 'clsx';
 import { addMonths, addYears, isSameDay, isSameMonth, isSameYear } from 'date-fns';
-import styles from './styles.css.js';
-import CalendarHeader from './header';
-import Grid from './grid';
-import { normalizeLocale } from '../internal/utils/locale';
-import { formatDate, parseDate } from '../internal/utils/date-time';
+
+import { getBaseProps } from '../internal/base-component';
 import { fireNonCancelableEvent } from '../internal/events/index.js';
 import checkControlled from '../internal/hooks/check-controlled/index.js';
-import clsx from 'clsx';
-import { CalendarProps } from './interfaces.js';
-import { getBaseProps } from '../internal/base-component';
 import { InternalBaseComponentProps } from '../internal/hooks/use-base-component/index.js';
-import { getBaseDay, getBaseMonth } from './utils/navigation';
 import { useDateCache } from '../internal/hooks/use-date-cache/index.js';
 import { useUniqueId } from '../internal/hooks/use-unique-id/index.js';
-import useCalendarLabels from './use-calendar-labels';
-import useCalendarGridRows from './grid/use-calendar-grid-rows';
-import useCalendarGridKeyboardNavigation from './grid/use-calendar-grid-keyboard-navigation';
+import { formatDate, parseDate } from '../internal/utils/date-time';
+import { normalizeLocale } from '../internal/utils/locale';
+import Grid from './grid';
 import CalendarGridHeader from './grid/calendar-grid-header';
+import useCalendarGridKeyboardNavigation from './grid/use-calendar-grid-keyboard-navigation';
+import useCalendarGridRows from './grid/use-calendar-grid-rows';
+import CalendarHeader from './header';
+import { CalendarProps } from './interfaces.js';
+import useCalendarLabels from './use-calendar-labels';
+import { getBaseDay, getBaseMonth } from './utils/navigation';
+
+import styles from './styles.css.js';
 
 export default function Calendar({
   value,
   locale = '',
   startOfWeek,
   isDateEnabled = () => true,
+  dateDisabledReason = () => '',
   ariaLabel,
   ariaLabelledby,
   ariaDescribedby,
@@ -60,6 +63,8 @@ export default function Calendar({
 
   const isMonthPicker = granularity === 'month';
 
+  const isDateFocusable = (date: Date) => isDateEnabled(date) || (!isDateEnabled(date) && !!dateDisabledReason(date));
+
   const baseDate = isMonthPicker
     ? getBaseMonth(displayedDate, isDateEnabled)
     : getBaseDay(displayedDate, isDateEnabled);
@@ -86,14 +91,14 @@ export default function Calendar({
   }, [memoizedValue]);
 
   const selectFocusedDate = (selected: Date | null, baseDate: Date): Date | null => {
-    if (selected && isDateEnabled(selected) && isSamePage(selected, baseDate)) {
+    if (selected && isDateFocusable(selected) && isSamePage(selected, baseDate)) {
       return selected;
     }
     const today = new Date();
-    if (isDateEnabled(today) && isSamePage(today, baseDate)) {
+    if (isDateFocusable(today) && isSamePage(today, baseDate)) {
       return today;
     }
-    if (isDateEnabled(baseDate)) {
+    if (isDateFocusable(baseDate)) {
       return baseDate;
     }
     return null;
@@ -135,6 +140,7 @@ export default function Calendar({
     focusableDate,
     granularity,
     isDateEnabled,
+    isDateFocusable,
     onChangePage: onChangePageHandler,
     onFocusDate: onGridFocusDateHandler,
     onSelectDate: onGridSelectDateHandler,
@@ -163,6 +169,7 @@ export default function Calendar({
         <div onBlur={onGridBlur} ref={gridWrapperRef}>
           <Grid
             isDateEnabled={isDateEnabled}
+            dateDisabledReason={dateDisabledReason}
             focusedDate={focusedDate}
             focusableDate={focusableDate}
             onSelectDate={onGridSelectDateHandler}

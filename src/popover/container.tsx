@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import React, { useLayoutEffect, useRef } from 'react';
 import clsx from 'clsx';
+
 import { nodeContains } from '@cloudscape-design/component-toolkit/dom';
 import { useResizeObserver } from '@cloudscape-design/component-toolkit/internal';
 
-import { InternalPosition, PopoverProps } from './interfaces';
-import styles from './styles.css.js';
 import { useVisualRefresh } from '../internal/hooks/use-visual-mode';
+import { InternalPosition, PopoverProps } from './interfaces';
 import usePopoverPosition from './use-popover-position.js';
+
+import styles from './styles.css.js';
 
 export interface PopoverContainerProps {
   /** References the element the container is positioned against. */
@@ -28,7 +30,7 @@ export interface PopoverContainerProps {
   arrow: (position: InternalPosition | null) => React.ReactNode;
   children: React.ReactNode;
   renderWithPortal?: boolean;
-  size: PopoverProps.Size;
+  size: PopoverProps.Size | 'content';
   fixedWidth: boolean;
   variant?: 'annotation';
   // When keepPosition is true, the popover will not recalculate its position when it resizes nor when it receives clicks.

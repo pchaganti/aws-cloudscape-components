@@ -23,6 +23,11 @@ const metadata: StyleDictionary.MetadataIndex = {
     themeable: true,
     public: true,
   },
+  colorBackgroundToggleButtonNormalPressed: {
+    description: 'The background color of normal toggle buttons in pressed state.',
+    themeable: true,
+    public: true,
+  },
   colorBackgroundButtonPrimaryActive: {
     description: 'The background color of primary buttons in active state.',
     themeable: true,
@@ -182,6 +187,11 @@ const metadata: StyleDictionary.MetadataIndex = {
     public: true,
     themeable: true,
   },
+  colorBackgroundNotificationGrey: {
+    description: 'Background color for grey notifications. For example: grey badges.',
+    public: true,
+    themeable: true,
+  },
   colorBackgroundPopover: {
     description: 'Background color for the popover container.',
     public: true,
@@ -258,8 +268,18 @@ const metadata: StyleDictionary.MetadataIndex = {
     public: true,
   },
   colorBorderButtonNormalDefault: { description: 'The border color of normal buttons.', themeable: true, public: true },
+  colorBorderToggleButtonNormalPressed: {
+    description: 'The border color of normal toggle buttons in pressed state.',
+    themeable: true,
+    public: true,
+  },
   colorBorderButtonNormalDisabled: {
     description: 'The border color of normal buttons in disabled state.',
+    themeable: true,
+    public: true,
+  },
+  colorTextButtonNormalDisabled: {
+    description: 'The text color of normal buttons in disabled state.',
     themeable: true,
     public: true,
   },
@@ -270,6 +290,11 @@ const metadata: StyleDictionary.MetadataIndex = {
   },
   colorBorderButtonPrimaryDisabled: {
     description: 'The border color of primary buttons in disabled state.',
+    themeable: true,
+    public: true,
+  },
+  colorTextButtonPrimaryDisabled: {
+    description: 'The text color of primary buttons in disabled state.',
     themeable: true,
     public: true,
   },
@@ -425,6 +450,11 @@ const metadata: StyleDictionary.MetadataIndex = {
   },
   colorTextButtonNormalActive: {
     description: 'The active text color of normal buttons. For example: Active text color in normal and link buttons.',
+    themeable: true,
+    public: true,
+  },
+  colorTextToggleButtonNormalPressed: {
+    description: 'The pressed text color of normal toggle buttons.',
     themeable: true,
     public: true,
   },
@@ -591,6 +621,11 @@ const metadata: StyleDictionary.MetadataIndex = {
   },
   colorTextInteractiveHover: {
     description: 'The color of clickable elements on hover. For example: icons on hover.',
+    public: true,
+    themeable: true,
+  },
+  colorTextToggleButtonIconPressed: {
+    description: 'The pressed text color of icon toggle buttons.',
     public: true,
     themeable: true,
   },

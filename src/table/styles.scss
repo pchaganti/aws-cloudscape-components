@@ -5,7 +5,7 @@
 
 @use '../internal/styles/index' as styles;
 @use '../internal/styles/tokens' as awsui;
-@use '../internal/hooks/focus-visible' as focus-visible;
+@use '@cloudscape-design/component-toolkit/internal/focus-visible' as focus-visible;
 @use '../container/shared' as container;
 
 .root {
@@ -163,6 +163,11 @@ filter search icon.
   &.variant-container {
     & > .table {
       padding-inline: awsui.$space-table-horizontal;
+    }
+
+    &:not(.table-has-header) {
+      border-start-start-radius: awsui.$border-radius-container;
+      border-start-end-radius: awsui.$border-radius-container;
     }
   }
   &::-webkit-scrollbar {

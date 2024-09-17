@@ -1,11 +1,13 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
-import SideNavigation, { SideNavigationProps } from '~components/side-navigation';
+
 import AppLayout from '~components/app-layout';
 import Badge from '~components/badge';
-import labels from '../app-layout/utils/labels';
+import Select from '~components/select';
+import SideNavigation, { SideNavigationProps } from '~components/side-navigation';
 
+import labels from '../app-layout/utils/labels';
 import logoSmall from './logos/logo-small.svg';
 
 const items: SideNavigationProps.Item[] = [
@@ -101,6 +103,17 @@ const items: SideNavigationProps.Item[] = [
   { type: 'link', text: 'Documentation', href: '#', external: true, externalIconAriaLabel: 'Opens in a new tab' },
 ];
 
+const itemsControl = (
+  <Select
+    options={[
+      { value: 'option1', label: 'Option 1' },
+      { value: 'option2', label: 'Option 2' },
+    ]}
+    selectedOption={{ value: 'option1', label: 'Option 1' }}
+    onChange={() => null}
+  />
+);
+
 export default function SideNavigationPage() {
   const [open, setOpen] = React.useState(true);
 
@@ -124,6 +137,7 @@ export default function SideNavigationPage() {
             },
           }}
           items={items}
+          itemsControl={itemsControl}
         />
       }
       content={

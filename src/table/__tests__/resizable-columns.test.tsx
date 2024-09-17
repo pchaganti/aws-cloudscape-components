@@ -1,15 +1,18 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React, { useLayoutEffect } from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
 import times from 'lodash/times';
-import { useResizeObserver } from '@cloudscape-design/component-toolkit/internal';
-import { render, screen } from '@testing-library/react';
-import createWrapper, { TableWrapper } from '../../../lib/components/test-utils/dom';
-import Table, { TableProps } from '../../../lib/components/table';
-import resizerStyles from '../../../lib/components/table/resizer/styles.css.js';
-import { fireMousedown, fireMouseup, fireMouseMove, fakeBoundingClientRect } from './utils/resize-actions';
-import { KeyCode } from '@cloudscape-design/test-utils-core/dist/utils';
+
 import { ContainerQueryEntry } from '@cloudscape-design/component-toolkit';
+import { useResizeObserver } from '@cloudscape-design/component-toolkit/internal';
+import { KeyCode } from '@cloudscape-design/test-utils-core/dist/utils';
+
+import Table, { TableProps } from '../../../lib/components/table';
+import createWrapper, { TableWrapper } from '../../../lib/components/test-utils/dom';
+import { fakeBoundingClientRect, fireMousedown, fireMouseMove, fireMouseup } from './utils/resize-actions';
+
+import resizerStyles from '../../../lib/components/table/resizer/styles.css.js';
 
 jest.mock('../../../lib/components/internal/utils/scrollable-containers', () => ({
   ...jest.requireActual('../../../lib/components/internal/utils/scrollable-containers'),
@@ -440,7 +443,7 @@ describe('column header content', () => {
   });
 });
 
-test('should set last column width to "auto" when container width exceeds total column width', () => {
+test('should set last column width to "auto" when container width exceeds total column width', async () => {
   const totalColumnsWidth = 150 + 300;
 
   const callbacks: ((entry: ContainerQueryEntry) => void)[] = [];
@@ -457,13 +460,19 @@ test('should set last column width to "auto" when container width exceeds total 
   });
 
   const { wrapper } = renderTable(<Table {...defaultProps} />);
-  expect(wrapper.findColumnHeaders().map(w => w.getElement().style.width)).toEqual(['150px', 'auto']);
+  await waitFor(() => {
+    expect(wrapper.findColumnHeaders().map(w => w.getElement().style.width)).toEqual(['150px', 'auto']);
+  });
 
   fireCallbacks({ contentBoxWidth: totalColumnsWidth } as unknown as ContainerQueryEntry);
-  expect(wrapper.findColumnHeaders().map(w => w.getElement().style.width)).toEqual(['150px', '300px']);
+  await waitFor(() => {
+    expect(wrapper.findColumnHeaders().map(w => w.getElement().style.width)).toEqual(['150px', '300px']);
+  });
 
   fireCallbacks({ contentBoxWidth: totalColumnsWidth + 1 } as unknown as ContainerQueryEntry);
-  expect(wrapper.findColumnHeaders().map(w => w.getElement().style.width)).toEqual(['150px', 'auto']);
+  await waitFor(() => {
+    expect(wrapper.findColumnHeaders().map(w => w.getElement().style.width)).toEqual(['150px', 'auto']);
+  });
 });
 
 describe('resize in rtl', () => {

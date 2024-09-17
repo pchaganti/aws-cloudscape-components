@@ -2,13 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as React from 'react';
 import { render, waitFor } from '@testing-library/react';
-import { KeyCode } from '@cloudscape-design/test-utils-core/utils';
-import createWrapper from '../../../lib/components/test-utils/dom';
-import Select, { SelectProps } from '../../../lib/components/select';
-import selectPartsStyles from '../../../lib/components/select/parts/styles.css.js';
-import '../../__a11y__/to-validate-a11y';
-import statusIconStyles from '../../../lib/components/status-indicator/styles.selectors.js';
+
 import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
+import { KeyCode } from '@cloudscape-design/test-utils-core/utils';
+
+import '../../__a11y__/to-validate-a11y';
+import Select, { SelectProps } from '../../../lib/components/select';
+import createWrapper from '../../../lib/components/test-utils/dom';
+
+import selectPartsStyles from '../../../lib/components/select/parts/styles.css.js';
+import statusIconStyles from '../../../lib/components/status-indicator/styles.selectors.js';
 
 jest.mock('@cloudscape-design/component-toolkit/internal', () => {
   const originalModule = jest.requireActual('@cloudscape-design/component-toolkit/internal');
@@ -450,10 +453,140 @@ describe.each([false, true])('expandToViewport=%s', expandToViewport => {
       wrapper.openDropdown();
       expect(wrapper.findDropdown({ expandToViewport })?.findOpenDropdown()).toBeFalsy();
     });
+
+    describe('Disabled item with reason', () => {
+      test('has no tooltip open by default', () => {
+        const { wrapper } = renderSelect({
+          options: [{ label: 'First', value: '1', disabled: true, disabledReason: 'disabled reason' }],
+        });
+        wrapper.openDropdown();
+
+        expect(wrapper.findDropdown({ expandToViewport }).findOption(1)!.findDisabledReason()).toBe(null);
+      });
+
+      test('has no tooltip without disabledReason', () => {
+        const { wrapper } = renderSelect({
+          options: [{ label: 'First', value: '1', disabled: true }],
+        });
+        wrapper.openDropdown();
+        wrapper.findTrigger()!.keydown(KeyCode.down);
+
+        expect(wrapper.findDropdown({ expandToViewport }).findOption(1)!.findDisabledReason()).toBe(null);
+      });
+
+      test('open tooltip when the item is highlighted', () => {
+        const { wrapper } = renderSelect({
+          options: [{ label: 'First', value: '1', disabled: true, disabledReason: 'disabled reason' }],
+        });
+        wrapper.openDropdown();
+        wrapper.findTrigger().keydown(KeyCode.down);
+
+        expect(
+          wrapper.findDropdown({ expandToViewport }).findOption(1)!.findDisabledReason()!.getElement()
+        ).toHaveTextContent('disabled reason');
+      });
+
+      test('has no disabledReason a11y attributes by default', () => {
+        const { wrapper } = renderSelect({
+          options: defaultOptions,
+        });
+        wrapper.openDropdown();
+
+        expect(
+          wrapper.findDropdown({ expandToViewport })!.find('[data-test-index="1"]')!.getElement()
+        ).not.toHaveAttribute('aria-describedby');
+        expect(wrapper.findDropdown({ expandToViewport })!.find('[data-test-index="1"]')!.find('span[hidden]')).toBe(
+          null
+        );
+      });
+
+      test('has disabledReason a11y attributes', () => {
+        const { wrapper } = renderSelect({
+          options: [{ label: 'First', value: '1', disabled: true, disabledReason: 'disabled reason' }],
+        });
+        wrapper.openDropdown();
+
+        expect(wrapper.findDropdown({ expandToViewport })!.find('[data-test-index="1"]')!.getElement()).toHaveAttribute(
+          'aria-describedby'
+        );
+        expect(
+          wrapper.findDropdown({ expandToViewport })!.find('[data-test-index="1"]')!.find('span[hidden]')!.getElement()
+        ).toHaveTextContent('disabled reason');
+      });
+
+      test('can not select disabled with reason option', () => {
+        const onChange = jest.fn();
+        const { wrapper } = renderSelect({
+          options: [{ label: 'First', value: '1', disabled: true, disabledReason: 'disabled reason' }],
+          onChange,
+        });
+        wrapper.openDropdown();
+        wrapper.selectOptionByValue('1', { expandToViewport });
+        expect(onChange).not.toHaveBeenCalled();
+      });
+
+      test('click on disabled with reason option does not close dropdown', () => {
+        const { wrapper } = renderSelect({
+          options: [{ label: 'First', value: '1', disabled: true, disabledReason: 'disabled reason' }],
+        });
+        wrapper.openDropdown();
+        wrapper.selectOptionByValue('1', { expandToViewport });
+        expect(wrapper.findDropdown({ expandToViewport })?.findOpenDropdown()).toBeTruthy();
+      });
+    });
+  });
+
+  describe('Inline Label', () => {
+    test('should render', () => {
+      const testLabel = 'Test label';
+      const { wrapper } = renderSelect({ inlineLabelText: testLabel });
+      const labelElement = wrapper.findInlineLabel();
+      expect(labelElement).not.toBeNull();
+      expect(labelElement?.getElement()).toHaveTextContent(testLabel);
+      expect(labelElement?.getElement().tagName).toBe('LABEL');
+    });
+    test('associate label with trigger button', () => {
+      const testLabel = 'Test label';
+      const { wrapper } = renderSelect({ inlineLabelText: testLabel });
+
+      const labelForAttribute = wrapper.findInlineLabel()!.getElement()!.getAttribute('for');
+      const triggerId = wrapper.findTrigger().getElement()!.id;
+
+      expect(labelForAttribute).toBe(triggerId);
+    });
   });
 
   test('should render with focus when autoFocus=true', () => {
     const { wrapper } = renderSelect({ autoFocus: true });
     expect(wrapper.findTrigger().getElement()).toHaveFocus();
+  });
+
+  test('group options can have description, label tag, tags', () => {
+    const { wrapper } = renderSelect({
+      options: [
+        {
+          label: 'First category',
+          value: 'group1',
+          options: [{ value: '1.1' }],
+        },
+        {
+          label: 'Second category',
+          value: 'group2',
+          description: 'Description',
+          labelTag: 'Label tag',
+          tags: ['Tag 1', 'Tag 2'],
+          options: [{ value: '2.1' }],
+        },
+      ],
+    });
+    wrapper.openDropdown();
+
+    const groupOption = wrapper.findDropdown({ expandToViewport }).findOptionByValue('group2')!;
+
+    expect(groupOption.findLabel()!.getElement().textContent).toBe('Second category');
+    expect(groupOption.findDescription()!.getElement().textContent).toBe('Description');
+    expect(groupOption.findLabelTag()!.getElement().textContent).toBe('Label tag');
+    expect(groupOption.findTags()![0].getElement().textContent).toBe('Tag 1');
+    expect(groupOption.findTags()![1].getElement().textContent).toBe('Tag 2');
   });
 });

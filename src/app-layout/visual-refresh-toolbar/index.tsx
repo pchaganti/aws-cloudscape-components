@@ -1,20 +1,23 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React, { useImperativeHandle, useState } from 'react';
-import { useControllable } from '../../internal/hooks/use-controllable';
-import { fireNonCancelableEvent } from '../../internal/events';
-import { useFocusControl } from '../utils/use-focus-control';
-import { useMobile } from '../../internal/hooks/use-mobile';
-import { useSplitPanelFocusControl } from '../utils/use-split-panel-focus-control';
-import { useDrawers } from '../utils/use-drawers';
-import { useUniqueId } from '../../internal/hooks/use-unique-id';
-import { AppLayoutProps, AppLayoutPropsWithDefaults } from '../interfaces';
-import { computeHorizontalLayout, computeVerticalLayout } from './compute-layout';
-import { SplitPanelProviderProps } from '../split-panel';
+
+import ScreenreaderOnly from '../../internal/components/screenreader-only';
 import { SplitPanelSideToggleProps } from '../../internal/context/split-panel-context';
-import { getSplitPanelDefaultSize } from '../../split-panel/utils/size-utils';
+import { fireNonCancelableEvent } from '../../internal/events';
+import { useControllable } from '../../internal/hooks/use-controllable';
+import { useMobile } from '../../internal/hooks/use-mobile';
+import { useUniqueId } from '../../internal/hooks/use-unique-id';
+import { useGetGlobalBreadcrumbs } from '../../internal/plugins/helpers/use-global-breadcrumbs';
 import globalVars from '../../internal/styles/global-vars';
-import { SkeletonLayout } from './skeleton';
+import { getSplitPanelDefaultSize } from '../../split-panel/utils/size-utils';
+import { AppLayoutProps, AppLayoutPropsWithDefaults } from '../interfaces';
+import { SplitPanelProviderProps } from '../split-panel';
+import { useDrawers } from '../utils/use-drawers';
+import { useFocusControl } from '../utils/use-focus-control';
+import { useSplitPanelFocusControl } from '../utils/use-split-panel-focus-control';
+import { computeHorizontalLayout, computeVerticalLayout } from './compute-layout';
+import { AppLayoutInternals } from './interfaces';
 import {
   AppLayoutDrawer,
   AppLayoutNavigation,
@@ -23,10 +26,10 @@ import {
   AppLayoutSplitPanelSide,
   AppLayoutToolbar,
 } from './internal';
-import { AppLayoutInternals } from './interfaces';
-import { useGetGlobalBreadcrumbs } from '../../internal/plugins/helpers/use-global-breadcrumbs';
+import { useMultiAppLayout } from './multi-layout';
+import { SkeletonLayout } from './skeleton';
 
-const AppLayoutVisualRefreshToolbar = React.forwardRef(
+const AppLayoutVisualRefreshToolbar = React.forwardRef<AppLayoutProps.Ref, AppLayoutPropsWithDefaults>(
   (
     {
       ariaLabels,
@@ -59,11 +62,11 @@ const AppLayoutVisualRefreshToolbar = React.forwardRef(
       maxContentWidth,
       placement,
       ...rest
-    }: AppLayoutPropsWithDefaults,
-    forwardRef: React.Ref<AppLayoutProps.Ref>
+    },
+    forwardRef
   ) => {
     const isMobile = useMobile();
-    const embeddedViewMode = (rest as any).__embeddedViewMode;
+    const { __embeddedViewMode: embeddedViewMode, __forceDeduplicationType: forceDeduplicationType } = rest as any;
     const splitPanelControlId = useUniqueId('split-panel');
     const [toolbarState, setToolbarState] = useState<'show' | 'hide'>('show');
     const [toolbarHeight, setToolbarHeight] = useState(0);
@@ -100,6 +103,11 @@ const AppLayoutVisualRefreshToolbar = React.forwardRef(
       toolsWidth,
       onToolsToggle,
     });
+
+    const onActiveDrawerChangeHandler = (drawerId: string | null) => {
+      onActiveDrawerChange(drawerId);
+      drawersFocusControl.setFocus();
+    };
 
     const [splitPanelOpen = false, setSplitPanelOpen] = useControllable(
       controlledSplitPanelOpen,
@@ -153,7 +161,7 @@ const AppLayoutVisualRefreshToolbar = React.forwardRef(
       displayed: false,
     });
 
-    const drawersFocusControl = useFocusControl(!!activeDrawer?.id);
+    const drawersFocusControl = useFocusControl(!!activeDrawer?.id, !isMobile, activeDrawer?.id);
     const navigationFocusControl = useFocusControl(navigationOpen);
     const splitPanelFocusControl = useSplitPanelFocusControl([splitPanelPreferences, splitPanelOpen]);
 
@@ -167,7 +175,7 @@ const AppLayoutVisualRefreshToolbar = React.forwardRef(
 
     const resolvedNavigation = navigationHide ? null : navigation ?? <></>;
     const { maxDrawerSize, maxSplitPanelSize, splitPanelForcedPosition, splitPanelPosition } = computeHorizontalLayout({
-      activeDrawerSize,
+      activeDrawerSize: activeDrawer ? activeDrawerSize : 0,
       splitPanelSize,
       minContentWidth,
       navigationOpen: !!resolvedNavigation && navigationOpen,
@@ -175,22 +183,39 @@ const AppLayoutVisualRefreshToolbar = React.forwardRef(
       placement,
       splitPanelOpen,
       splitPanelPosition: splitPanelPreferences?.position,
+      isMobile,
     });
 
-    const discoveredBreadcrumbs = useGetGlobalBreadcrumbs();
+    const { registered, toolbarProps } = useMultiAppLayout({
+      forceDeduplicationType,
+      ariaLabels: ariaLabelsWithDrawers,
+      navigation: resolvedNavigation,
+      navigationOpen,
+      onNavigationToggle,
+      navigationFocusRef: navigationFocusControl.refs.toggle,
+      breadcrumbs,
+      activeDrawerId: activeDrawer?.id ?? null,
+      // only pass it down if there are non-empty drawers or tools
+      drawers: drawers?.length || !toolsHide ? drawers : undefined,
+      onActiveDrawerChange: onActiveDrawerChangeHandler,
+      drawersFocusRef: drawersFocusControl.refs.toggle,
+      splitPanel,
+      splitPanelToggleProps: {
+        ...splitPanelToggleConfig,
+        active: splitPanelOpen,
+        controlId: splitPanelControlId,
+        position: splitPanelPosition,
+      },
+      splitPanelFocusRef: splitPanelFocusControl.refs.toggle,
+      onSplitPanelToggle: onSplitPanelToggleHandler,
+    });
 
-    const hasToolbar = Boolean(
-      !embeddedViewMode &&
-        (resolvedNavigation ||
-          breadcrumbs ||
-          discoveredBreadcrumbs ||
-          splitPanelToggleConfig.displayed ||
-          drawers!.length > 0)
-    );
+    const hasToolbar = !embeddedViewMode && !!toolbarProps;
+    const discoveredBreadcrumbs = useGetGlobalBreadcrumbs(hasToolbar);
 
     const verticalOffsets = computeVerticalLayout({
       topOffset: placement.insetBlockStart,
-      hasToolbar: hasToolbar && toolbarState !== 'hide',
+      hasVisibleToolbar: hasToolbar && toolbarState !== 'hide' && !isMobile,
       notificationsHeight: notificationsHeight ?? 0,
       toolbarHeight: toolbarHeight ?? 0,
       stickyNotifications: !!stickyNotifications,
@@ -225,7 +250,7 @@ const AppLayoutVisualRefreshToolbar = React.forwardRef(
       setNotificationsHeight,
       onSplitPanelToggle: onSplitPanelToggleHandler,
       onNavigationToggle,
-      onActiveDrawerChange,
+      onActiveDrawerChange: onActiveDrawerChangeHandler,
       onActiveDrawerResize,
     };
 
@@ -257,50 +282,59 @@ const AppLayoutVisualRefreshToolbar = React.forwardRef(
     };
 
     return (
-      <SkeletonLayout
-        style={{
-          [globalVars.stickyVerticalTopOffset]: `${verticalOffsets.header}px`,
-          [globalVars.stickyVerticalBottomOffset]: `${placement.insetBlockEnd}px`,
-          paddingBlockEnd: splitPanelOpen ? splitPanelReportedSize : '',
-        }}
-        toolbar={hasToolbar && <AppLayoutToolbar appLayoutInternals={appLayoutInternals} />}
-        notifications={
-          notifications && (
-            <AppLayoutNotifications appLayoutInternals={appLayoutInternals}>{notifications}</AppLayoutNotifications>
-          )
-        }
-        contentHeader={contentHeader}
-        content={content}
-        navigation={resolvedNavigation && <AppLayoutNavigation appLayoutInternals={appLayoutInternals} />}
-        navigationOpen={navigationOpen}
-        navigationWidth={navigationWidth}
-        tools={activeDrawer && <AppLayoutDrawer appLayoutInternals={appLayoutInternals} />}
-        toolsOpen={!!activeDrawer}
-        toolsWidth={activeDrawerSize}
-        sideSplitPanel={
-          splitPanelPosition === 'side' &&
-          splitPanel && (
-            <AppLayoutSplitPanelSide appLayoutInternals={appLayoutInternals} splitPanelInternals={splitPanelInternals}>
-              {splitPanel}
-            </AppLayoutSplitPanelSide>
-          )
-        }
-        bottomSplitPanel={
-          splitPanelPosition === 'bottom' && (
-            <AppLayoutSplitPanelBottom
-              appLayoutInternals={appLayoutInternals}
-              splitPanelInternals={splitPanelInternals}
-            >
-              {splitPanel}
-            </AppLayoutSplitPanelBottom>
-          )
-        }
-        splitPanelOpen={splitPanelOpen}
-        placement={placement}
-        contentType={contentType}
-        maxContentWidth={maxContentWidth}
-        disableContentPaddings={disableContentPaddings}
-      />
+      <>
+        {/* Rendering a hidden copy of breadcrumbs to trigger their deduplication */}
+        {!hasToolbar && breadcrumbs ? <ScreenreaderOnly>{breadcrumbs}</ScreenreaderOnly> : null}
+        <SkeletonLayout
+          style={{
+            [globalVars.stickyVerticalTopOffset]: `${verticalOffsets.header}px`,
+            [globalVars.stickyVerticalBottomOffset]: `${placement.insetBlockEnd}px`,
+            paddingBlockEnd: splitPanelOpen && splitPanelPosition === 'bottom' ? splitPanelReportedSize : '',
+          }}
+          toolbar={
+            hasToolbar && <AppLayoutToolbar appLayoutInternals={appLayoutInternals} toolbarProps={toolbarProps} />
+          }
+          notifications={
+            notifications && (
+              <AppLayoutNotifications appLayoutInternals={appLayoutInternals}>{notifications}</AppLayoutNotifications>
+            )
+          }
+          contentHeader={contentHeader}
+          // delay rendering the content until registration of this instance is complete
+          content={registered ? content : null}
+          navigation={resolvedNavigation && <AppLayoutNavigation appLayoutInternals={appLayoutInternals} />}
+          navigationOpen={navigationOpen}
+          navigationWidth={navigationWidth}
+          tools={activeDrawer && <AppLayoutDrawer appLayoutInternals={appLayoutInternals} />}
+          toolsOpen={!!activeDrawer}
+          toolsWidth={activeDrawerSize}
+          sideSplitPanel={
+            splitPanelPosition === 'side' && (
+              <AppLayoutSplitPanelSide
+                appLayoutInternals={appLayoutInternals}
+                splitPanelInternals={splitPanelInternals}
+              >
+                {splitPanel}
+              </AppLayoutSplitPanelSide>
+            )
+          }
+          bottomSplitPanel={
+            splitPanelPosition === 'bottom' && (
+              <AppLayoutSplitPanelBottom
+                appLayoutInternals={appLayoutInternals}
+                splitPanelInternals={splitPanelInternals}
+              >
+                {splitPanel}
+              </AppLayoutSplitPanelBottom>
+            )
+          }
+          splitPanelOpen={splitPanelOpen}
+          placement={placement}
+          contentType={contentType}
+          maxContentWidth={maxContentWidth}
+          disableContentPaddings={disableContentPaddings}
+        />
+      </>
     );
   }
 );

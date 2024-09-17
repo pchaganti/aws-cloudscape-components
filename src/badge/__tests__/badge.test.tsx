@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
 import { render } from '@testing-library/react';
+
 import Badge, { BadgeProps } from '../../../lib/components/badge';
 import createWrapper from '../../../lib/components/test-utils/dom';
+
 import styles from '../../../lib/components/badge/styles.css.js';
 
 function getNativeSpan(container: HTMLElement) {
@@ -31,7 +33,19 @@ describe('Badge', () => {
     });
   });
 
-  (['blue', 'grey', 'green', 'red'] as Array<BadgeProps['color']>).forEach(color => {
+  (
+    [
+      'blue',
+      'grey',
+      'green',
+      'red',
+      'severity-critical',
+      'severity-high',
+      'severity-medium',
+      'severity-low',
+      'severity-neutral',
+    ] as Array<BadgeProps['color']>
+  ).forEach(color => {
     test(`renders color ${color} correctly`, () => {
       const badge = renderBadge(<Badge color={color}>20</Badge>);
       expect(badge).toHaveClass(styles[`badge-color-${color}`]);

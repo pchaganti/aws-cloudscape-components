@@ -1,14 +1,19 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import clsx from 'clsx';
 import React, { useRef } from 'react';
-import styles from './styles.css.js';
-import { getStickyClassNames } from '../utils';
-import { StickyColumnsModel, useStickyCellStyles } from '../sticky-columns';
-import { TableRole, getTableCellRoleProps } from '../table-role';
-import { useMergeRefs } from '../../internal/hooks/use-merge-refs';
+import clsx from 'clsx';
+
+import { copyAnalyticsMetadataAttribute } from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+
 import { useSingleTabStopNavigation } from '../../internal/context/single-tab-stop-navigation-context';
+import { useMergeRefs } from '../../internal/hooks/use-merge-refs';
 import { ExpandToggleButton } from '../expandable-rows/expand-toggle-button';
+import { TableProps } from '../interfaces.js';
+import { StickyColumnsModel, useStickyCellStyles } from '../sticky-columns';
+import { getTableCellRoleProps, TableRole } from '../table-role';
+import { getStickyClassNames } from '../utils';
+
+import styles from './styles.css.js';
 
 export interface TableTdElementProps {
   className?: string;
@@ -43,6 +48,7 @@ export interface TableTdElementProps {
   onExpandableItemToggle?: () => void;
   expandButtonLabel?: string;
   collapseButtonLabel?: string;
+  verticalAlign?: TableProps.VerticalAlign;
 }
 
 export const TableTdElement = React.forwardRef<HTMLTableCellElement, TableTdElementProps>(
@@ -77,6 +83,8 @@ export const TableTdElement = React.forwardRef<HTMLTableCellElement, TableTdElem
       onExpandableItemToggle,
       expandButtonLabel,
       collapseButtonLabel,
+      verticalAlign,
+      ...rest
     },
     ref
   ) => {
@@ -113,6 +121,7 @@ export const TableTdElement = React.forwardRef<HTMLTableCellElement, TableTdElem
           hasFooter && styles['has-footer'],
           level !== undefined && styles['body-cell-expandable'],
           level !== undefined && styles[`expandable-level-${getLevelClassSuffix(level)}`],
+          verticalAlign === 'top' && styles['body-cell-align-top'],
           stickyStyles.className
         )}
         onClick={onClick}
@@ -121,20 +130,20 @@ export const TableTdElement = React.forwardRef<HTMLTableCellElement, TableTdElem
         ref={mergedRef}
         {...nativeAttributes}
         tabIndex={cellTabIndex === -1 ? undefined : cellTabIndex}
+        {...copyAnalyticsMetadataAttribute(rest)}
       >
-        <div className={styles['body-cell-content']}>
-          {level !== undefined && isExpandable && (
-            <div className={styles['expandable-toggle-wrapper']}>
-              <ExpandToggleButton
-                isExpanded={isExpanded}
-                onExpandableItemToggle={onExpandableItemToggle}
-                expandButtonLabel={expandButtonLabel}
-                collapseButtonLabel={collapseButtonLabel}
-              />
-            </div>
-          )}
-          {children}
-        </div>
+        {level !== undefined && isExpandable && (
+          <div className={styles['expandable-toggle-wrapper']}>
+            <ExpandToggleButton
+              isExpanded={isExpanded}
+              onExpandableItemToggle={onExpandableItemToggle}
+              expandButtonLabel={expandButtonLabel}
+              collapseButtonLabel={collapseButtonLabel}
+            />
+          </div>
+        )}
+
+        <div className={styles['body-cell-content']}>{children}</div>
       </Element>
     );
   }

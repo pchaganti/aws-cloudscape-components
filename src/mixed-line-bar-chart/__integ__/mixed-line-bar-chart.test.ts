@@ -1,10 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import createWrapper, { BarChartWrapper, MixedLineBarChartWrapper } from '../../../lib/components/test-utils/selectors';
-import chartPlotStyles from '../../../lib/components/internal/components/chart-plot/styles.selectors.js';
-import mixedChartStyles from '../../../lib/components/mixed-line-bar-chart/styles.selectors.js';
 import { setupTest } from './common';
 import { setupPopoverPositionTest } from './popover-position-page';
+
+import chartPlotStyles from '../../../lib/components/internal/components/chart-plot/styles.selectors.js';
+import mixedChartStyles from '../../../lib/components/mixed-line-bar-chart/styles.selectors.js';
 
 const chartWrapper = createWrapper().findMixedLineBarChart('#chart');
 const groupedBarWrapper = new BarChartWrapper('#chart-grouped');
@@ -547,7 +548,7 @@ describe('Details popover', () => {
   describe('keeps the popover position when it resizes due to interacting with the popover itself', () => {
     test.each(['hover', 'click', 'keyboard'])('Interaction type: %s', interactionType =>
       setupPopoverPositionTest(async page => {
-        await page.setWindowSize({ width: 900, height: 500 });
+        await page.setWindowSize({ width: 900, height: 550 });
         await page.openPopoverOnBarGroup(1, interactionType);
         const popover = page.findDetailPopover();
         expect(page.isDisplayed(popover.toSelector())).resolves.toBe(true);

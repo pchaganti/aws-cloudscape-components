@@ -1,18 +1,16 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import clsx from 'clsx';
 import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import clsx from 'clsx';
+
+import { useContainerQuery } from '@cloudscape-design/component-toolkit';
+import { useStableCallback } from '@cloudscape-design/component-toolkit/internal';
+
+import { SplitPanelSideToggleProps } from '../internal/context/split-panel-context';
+import { fireNonCancelableEvent } from '../internal/events';
 import { useControllable } from '../internal/hooks/use-controllable';
 import { useMobile } from '../internal/hooks/use-mobile';
-import { fireNonCancelableEvent } from '../internal/events';
-import { AppLayoutProps, AppLayoutPropsWithDefaults } from './interfaces';
-import { Notifications } from './notifications';
-import { MobileToolbar } from './mobile-toolbar';
-import { useFocusControl } from './utils/use-focus-control';
-import styles from './styles.css.js';
-import testutilStyles from './test-classes/styles.css.js';
 import { findUpUntil } from '../internal/utils/dom';
-import { SplitPanelSideToggleProps } from '../internal/context/split-panel-context';
 import {
   CONSTRAINED_MAIN_PANEL_MIN_HEIGHT,
   CONSTRAINED_PAGE_HEIGHT,
@@ -22,19 +20,23 @@ import {
 import ContentWrapper, { ContentWrapperProps } from './content-wrapper';
 import { Drawer, DrawerTriggersBar } from './drawer';
 import { ResizableDrawer } from './drawer/resizable-drawer';
+import { AppLayoutProps, AppLayoutPropsWithDefaults } from './interfaces';
+import { MobileToolbar } from './mobile-toolbar';
+import { Notifications } from './notifications';
 import {
-  SPLIT_PANEL_MIN_WIDTH,
   SideSplitPanelDrawer,
+  SPLIT_PANEL_MIN_WIDTH,
   SplitPanelProvider,
   SplitPanelProviderProps,
 } from './split-panel';
-import { useStableCallback } from '@cloudscape-design/component-toolkit/internal';
-
-import { useSplitPanelFocusControl } from './utils/use-split-panel-focus-control';
-import { TOOLS_DRAWER_ID, useDrawers } from './utils/use-drawers';
-import { getStickyOffsetVars } from './utils/sticky-offsets';
-import { useContainerQuery } from '@cloudscape-design/component-toolkit';
 import { togglesConfig } from './toggles';
+import { getStickyOffsetVars } from './utils/sticky-offsets';
+import { TOOLS_DRAWER_ID, useDrawers } from './utils/use-drawers';
+import { useFocusControl } from './utils/use-focus-control';
+import { useSplitPanelFocusControl } from './utils/use-split-panel-focus-control';
+
+import styles from './styles.css.js';
+import testutilStyles from './test-classes/styles.css.js';
 
 const ClassicAppLayout = React.forwardRef(
   (
@@ -89,7 +91,11 @@ const ClassicAppLayout = React.forwardRef(
     });
     const onToolsToggle = (open: boolean) => {
       setToolsOpen(open);
-      focusToolsButtons();
+      if (hasDrawers) {
+        focusDrawersButtons();
+      } else {
+        focusToolsButtons();
+      }
       fireNonCancelableEvent(onToolsChange, { open });
     };
 
@@ -210,24 +216,6 @@ const ClassicAppLayout = React.forwardRef(
     const closedDrawerWidth = 40;
     const effectiveNavigationWidth = navigationHide ? 0 : navigationOpen ? navigationWidth : closedDrawerWidth;
 
-    const getEffectiveToolsWidth = () => {
-      if (activeDrawerSize) {
-        return activeDrawerSize;
-      }
-
-      if (toolsHide || drawers) {
-        return 0;
-      }
-
-      if (toolsOpen) {
-        return toolsWidth;
-      }
-
-      return closedDrawerWidth;
-    };
-
-    const effectiveToolsWidth = getEffectiveToolsWidth();
-
     const defaultSplitPanelSize = getSplitPanelDefaultSize(splitPanelPosition);
     const [splitPanelSize = defaultSplitPanelSize, setSplitPanelSize] = useControllable(
       controlledSplitPanelSize,
@@ -293,6 +281,24 @@ const ClassicAppLayout = React.forwardRef(
       placement.inlineSize - effectiveNavigationWidth - minContentWidth - contentPadding - rightDrawerBarWidth
     );
 
+    const getEffectiveToolsWidth = () => {
+      if (activeDrawerSize && activeDrawer) {
+        return Math.min(resizableSpaceAvailable, activeDrawerSize);
+      }
+
+      if (toolsHide || drawers) {
+        return 0;
+      }
+
+      if (toolsOpen) {
+        return toolsWidth;
+      }
+
+      return closedDrawerWidth;
+    };
+
+    const effectiveToolsWidth = getEffectiveToolsWidth();
+
     // if there is no space to display split panel in the side, force to bottom
     const isSplitPanelForcedPosition =
       isMobile || resizableSpaceAvailable - effectiveToolsWidth < SPLIT_PANEL_MIN_WIDTH;
@@ -301,7 +307,7 @@ const ClassicAppLayout = React.forwardRef(
     const splitPaneAvailableOnTheSide = splitPanelDisplayed && finalSplitPanePosition === 'side';
 
     const sideSplitPanelSize = splitPaneAvailableOnTheSide ? (splitPanelOpen ? splitPanelSize : closedDrawerWidth) : 0;
-    const splitPanelMaxWidth = Math.max(0, resizableSpaceAvailable - effectiveToolsWidth);
+    const sideSplitPanelMaxWidth = Math.max(0, resizableSpaceAvailable - effectiveToolsWidth);
     const drawerMaxSize = Math.max(0, resizableSpaceAvailable - sideSplitPanelSize);
 
     const navigationClosedWidth = navigationHide || isMobile ? 0 : closedDrawerWidth;
@@ -320,7 +326,7 @@ const ClassicAppLayout = React.forwardRef(
       rightOffset: isMobile ? 0 : placement.insetInlineEnd + effectiveToolsWidth + rightDrawerBarWidth,
       position: finalSplitPanePosition,
       size: splitPanelSize,
-      maxWidth: splitPanelMaxWidth,
+      maxWidth: sideSplitPanelMaxWidth,
       getMaxHeight: getSplitPanelMaxHeight,
       disableContentPaddings,
       contentWidthStyles: contentMaxWidthStyle,

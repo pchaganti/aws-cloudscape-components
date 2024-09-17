@@ -1,11 +1,12 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+import React from 'react';
+
 import { BaseComponentProps } from '../internal/base-component';
+import { ExpandToViewport } from '../internal/components/dropdown/interfaces';
 import { FormFieldValidationControlProps } from '../internal/context/form-field-context';
 import { NonCancelableEventHandler } from '../internal/events';
 import { TimeInputProps } from '../time-input/interfaces';
-import { ExpandToViewport } from '../internal/components/dropdown/interfaces';
-import React from 'react';
 
 export interface DateRangePickerBaseProps {
   /**
@@ -27,6 +28,13 @@ export interface DateRangePickerBaseProps {
    * server-side, in the same way as for other form elements.
    */
   isDateEnabled?: DateRangePickerProps.IsDateEnabledFunction;
+
+  /**
+   * Provides a reason why a particular date in the calendar is not enabled (only when `isDateEnabled` returns `false`).
+   * If provided, the date becomes focusable.
+   * @param date
+   */
+  dateDisabledReason?: DateRangePickerProps.DateDisabledReasonFunction;
 
   /**
    * The locale to be used for rendering month names and defining the
@@ -236,6 +244,10 @@ export namespace DateRangePickerProps {
 
   export interface IsDateEnabledFunction {
     (date: Date): boolean;
+  }
+
+  export interface DateDisabledReasonFunction {
+    (date: Date): string;
   }
 
   export interface GetTimeOffsetFunction {

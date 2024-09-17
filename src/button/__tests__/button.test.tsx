@@ -1,13 +1,15 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
-import { act, render } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
+
 import Button, { ButtonProps } from '../../../lib/components/button';
 import InternalButton from '../../../lib/components/button/internal';
 import createWrapper, { ButtonWrapper } from '../../../lib/components/test-utils/dom';
-import styles from '../../../lib/components/button/styles.css.js';
 import { buttonRelExpectations, buttonTargetExpectations } from '../../__tests__/target-rel-test-helper';
 import { renderWithSingleTabStopNavigation } from '../../internal/context/__tests__/utils';
+
+import styles from '../../../lib/components/button/styles.css.js';
 
 function renderWrappedButton(props: ButtonProps = {}) {
   const onClickSpy = jest.fn();
@@ -88,6 +90,113 @@ describe('Button Component', () => {
     test('adds a tab index -1 when button with link is disabled', () => {
       const wrapper = renderButton({ disabled: true, href: 'https://amazon.com' });
       expect(wrapper.getElement()).toHaveAttribute('tabIndex', '-1');
+    });
+  });
+
+  describe('disabled with reason', () => {
+    test('renders button as normal when disabledReason is set and button is not disabled', () => {
+      const wrapper = renderButton({ disabled: false, disabledReason: 'reason' });
+
+      expect(wrapper.getElement()).not.toHaveAttribute('disabled');
+      expect(wrapper.getElement()).not.toHaveAttribute('aria-disabled');
+    });
+
+    test('does not add disabled attribute when disabled with reason', () => {
+      const wrapper = renderButton({ disabled: true, disabledReason: 'reason' });
+
+      expect(wrapper.getElement()).not.toHaveAttribute('disabled');
+      expect(wrapper.getElement()).toHaveAttribute('aria-disabled');
+    });
+
+    test('has no tooltip open by default', () => {
+      const wrapper = renderButton({ disabled: true, disabledReason: 'reason' });
+
+      expect(wrapper.findDisabledReason()).toBe(null);
+    });
+
+    test('has no tooltip without disabledReason', () => {
+      const wrapper = renderButton({ disabled: true });
+
+      wrapper.getElement()!.focus();
+
+      expect(wrapper.findDisabledReason()).toBeNull();
+    });
+
+    test('open tooltip on focus', () => {
+      const wrapper = renderButton({ disabled: true, disabledReason: 'reason' });
+
+      wrapper.getElement()!.focus();
+
+      expect(wrapper.findDisabledReason()).not.toBeNull();
+      expect(wrapper.findDisabledReason()!.getElement()).toHaveTextContent('reason');
+    });
+
+    test('closes tooltip on blur', () => {
+      const wrapper = renderButton({ disabled: true, disabledReason: 'reason' });
+
+      wrapper.getElement()!.focus();
+
+      expect(wrapper.findDisabledReason()).not.toBeNull();
+      expect(wrapper.findDisabledReason()!.getElement()).toHaveTextContent('reason');
+
+      wrapper.getElement()!.blur();
+
+      expect(wrapper.findDisabledReason()).toBeNull();
+    });
+
+    test('open tooltip on mouseenter', () => {
+      const wrapper = renderButton({ disabled: true, disabledReason: 'reason' });
+
+      fireEvent.mouseEnter(wrapper.getElement());
+
+      expect(wrapper.findDisabledReason()).not.toBeNull();
+      expect(wrapper.findDisabledReason()!.getElement()).toHaveTextContent('reason');
+    });
+
+    test('close tooltip on mouseleave', () => {
+      const wrapper = renderButton({ disabled: true, disabledReason: 'reason' });
+
+      fireEvent.mouseEnter(wrapper.getElement());
+
+      expect(wrapper.findDisabledReason()).not.toBeNull();
+      expect(wrapper.findDisabledReason()!.getElement()).toHaveTextContent('reason');
+
+      fireEvent.mouseLeave(wrapper.getElement());
+
+      expect(wrapper.findDisabledReason()).toBeNull();
+    });
+
+    test('has no aria-describedby by default', () => {
+      const wrapper = renderButton({});
+
+      expect(wrapper.getElement()).not.toHaveAttribute('aria-describedby');
+    });
+
+    test('has no aria-describedby without disabledReason', () => {
+      const wrapper = renderButton({ disabled: true });
+
+      expect(wrapper.getElement()).not.toHaveAttribute('aria-describedby');
+    });
+
+    test('has aria-describedby with disabledReason', () => {
+      const wrapper = renderButton({ disabled: true, disabledReason: 'reason' });
+
+      expect(wrapper.getElement()).toHaveAttribute('aria-describedby');
+    });
+
+    test('has hidden element (linked to aria-describedby) with disabledReason', () => {
+      const wrapper = renderButton({ disabled: true, disabledReason: 'reason' });
+
+      expect(wrapper.find('span[hidden]')!.getElement()).toHaveTextContent('reason');
+    });
+
+    test('does not trigger onClick handler when disabled with reason', () => {
+      const onClick = jest.fn();
+      const wrapper = renderButton({ disabled: true, disabledReason: 'reason', onClick });
+
+      wrapper.click();
+
+      expect(onClick).not.toHaveBeenCalled();
     });
   });
 

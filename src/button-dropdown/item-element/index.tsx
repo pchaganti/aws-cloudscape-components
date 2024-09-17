@@ -2,19 +2,28 @@
 // SPDX-License-Identifier: Apache-2.0
 import React, { useEffect, useRef } from 'react';
 import clsx from 'clsx';
-import { ItemProps } from '../interfaces';
-import { isCheckboxItem, isLinkItem } from '../utils/utils';
-import styles from './styles.css.js';
-import Tooltip from '../tooltip';
 
-import { ButtonDropdownProps } from '../interfaces';
-import { getItemTarget } from '../utils/utils';
-import useHiddenDescription from '../utils/use-hidden-description';
+import {
+  GeneratedAnalyticsMetadataFragment,
+  getAnalyticsMetadataAttribute,
+} from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+
 import InternalIcon, { InternalIconProps } from '../../icon/internal';
 import { useDropdownContext } from '../../internal/components/dropdown/context';
-import { getMenuItemProps, getMenuItemCheckboxProps } from '../utils/menu-item';
+import useHiddenDescription from '../../internal/hooks/use-hidden-description';
+import { GeneratedAnalyticsMetadataButtonDropdownClick } from '../analytics-metadata/interfaces';
+import { ItemProps, LinkItem } from '../interfaces';
+import { ButtonDropdownProps } from '../interfaces';
+import Tooltip from '../tooltip';
+import { getMenuItemCheckboxProps, getMenuItemProps } from '../utils/menu-item';
+import { isCheckboxItem, isLinkItem } from '../utils/utils';
+import { getItemTarget } from '../utils/utils';
+
+import analyticsLabels from '../analytics-metadata/styles.css.js';
+import styles from './styles.css.js';
 
 const ItemElement = ({
+  position = '1',
   item,
   disabled,
   onItemActivate,
@@ -23,7 +32,9 @@ const ItemElement = ({
   showDivider,
   hasCategoryHeader,
   isKeyboardHighlighted = false,
+  analyticsMetadataTransformer = (metadata: GeneratedAnalyticsMetadataFragment) => metadata,
   variant = 'normal',
+  linkStyle,
 }: ItemProps) => {
   const isLink = isLinkItem(item);
   const isCheckbox = isCheckboxItem(item);
@@ -59,8 +70,21 @@ const ItemElement = ({
       onClick={onClick}
       onMouseEnter={onHover}
       onTouchStart={onHover}
+      {...getAnalyticsMetadataAttribute(
+        disabled
+          ? {}
+          : (analyticsMetadataTransformer!({
+              action: 'click',
+              detail: {
+                position,
+                id: item.id,
+                label: `.${analyticsLabels['menu-item']}`,
+                href: (item as LinkItem).href || '',
+              },
+            }) as GeneratedAnalyticsMetadataButtonDropdownClick)
+      )}
     >
-      <MenuItem item={item} disabled={disabled} highlighted={highlighted} />
+      <MenuItem item={item} disabled={disabled} highlighted={highlighted} linkStyle={linkStyle} />
     </li>
   );
 };
@@ -77,9 +101,10 @@ interface MenuItemProps {
   item: InternalItemProps | InternalCheckboxItemProps;
   disabled: boolean;
   highlighted: boolean;
+  linkStyle?: boolean;
 }
 
-function MenuItem({ item, disabled, highlighted }: MenuItemProps) {
+function MenuItem({ item, disabled, highlighted, linkStyle }: MenuItemProps) {
   const menuItemRef = useRef<(HTMLSpanElement & HTMLAnchorElement) | null>(null);
   const isCheckbox = isCheckboxItem(item);
 
@@ -92,7 +117,8 @@ function MenuItem({ item, disabled, highlighted }: MenuItemProps) {
   const isDisabledWithReason = disabled && item.disabledReason;
   const { targetProps, descriptionEl } = useHiddenDescription(item.disabledReason);
   const menuItemProps: React.HTMLAttributes<HTMLSpanElement & HTMLAnchorElement> = {
-    className: styles['menu-item'],
+    'aria-label': item.ariaLabel,
+    className: clsx(styles['menu-item'], analyticsLabels['menu-item'], linkStyle && styles['link-style']),
     lang: item.lang,
     ref: menuItemRef,
     // We are using the roving tabindex technique to manage the focus state of the dropdown.
@@ -121,7 +147,7 @@ function MenuItem({ item, disabled, highlighted }: MenuItemProps) {
   const { position } = useDropdownContext();
   const tooltipPosition = position === 'bottom-left' || position === 'top-left' ? 'left' : 'right';
   return isDisabledWithReason ? (
-    <Tooltip content={item.disabledReason} position={tooltipPosition}>
+    <Tooltip content={item.disabledReason} position={tooltipPosition} className={styles['item-tooltip-wrapper']}>
       {menuItem}
       {descriptionEl}
     </Tooltip>

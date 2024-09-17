@@ -3,7 +3,7 @@
  SPDX-License-Identifier: Apache-2.0
 */
 @use '../internal/generated/custom-css-properties/index.scss' as custom-props;
-@use '../internal/hooks/focus-visible' as focus-visible;
+@use '@cloudscape-design/component-toolkit/internal/focus-visible' as focus-visible;
 @use '../internal/styles/tokens' as awsui;
 @use '../internal/styles' as styles;
 @use '../internal/styles/typography' as typography;
@@ -102,11 +102,17 @@
   @include styles.text-flex-wrapping;
 }
 
-.flash-header {
+.hidden {
+  display: none;
+}
+
+.flash-header,
+.header-replacement {
   font-weight: styles.$font-weight-bold;
 }
 
-.flash-content {
+.flash-content,
+.content-replacement {
   /* Only used as a selector for test-utils */
 }
 

@@ -1,11 +1,14 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
-import clsx from 'clsx';
 import flattenChildren from 'react-keyed-flatten-children';
-import { InternalColumnLayoutProps } from '../interfaces';
-import styles from './styles.css.js';
+import clsx from 'clsx';
+
 import { useContainerQuery } from '@cloudscape-design/component-toolkit';
+
+import { InternalColumnLayoutProps } from '../interfaces';
+
+import styles from './styles.css.js';
 
 const isOdd = (value: number): boolean => value % 2 !== 0;
 
@@ -29,7 +32,10 @@ export function calculcateCssColumnCount(
 }
 
 interface FlexibleColumnLayoutProps
-  extends Pick<InternalColumnLayoutProps, 'minColumnWidth' | 'columns' | 'variant' | 'borders' | 'disableGutters'> {
+  extends Pick<
+    InternalColumnLayoutProps,
+    'minColumnWidth' | 'columns' | 'variant' | 'borders' | 'disableGutters' | '__tagOverride'
+  > {
   children: React.ReactNode;
 }
 
@@ -39,6 +45,7 @@ export default function FlexibleColumnLayout({
   disableGutters,
   variant,
   children,
+  __tagOverride,
 }: FlexibleColumnLayoutProps) {
   const [containerWidth, containerRef] = useContainerQuery(rect => rect.contentBoxWidth);
 
@@ -47,16 +54,17 @@ export default function FlexibleColumnLayout({
 
   // Flattening the children allows us to "see through" React Fragments and nested arrays.
   const flattenedChildren = flattenChildren(children);
+  const Tag = (__tagOverride ?? 'div') as 'div';
 
   return (
-    <div
+    <Tag
       ref={containerRef}
       className={clsx(
         styles['css-grid'],
         styles[`grid-variant-${variant}`],
         shouldDisableGutters && [styles['grid-no-gutters']]
       )}
-      style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
+      style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }}
     >
       {flattenedChildren.map((child, i) => {
         // If this react child is a primitive value, the key will be undefined
@@ -73,6 +81,6 @@ export default function FlexibleColumnLayout({
           </div>
         );
       })}
-    </div>
+    </Tag>
   );
 }

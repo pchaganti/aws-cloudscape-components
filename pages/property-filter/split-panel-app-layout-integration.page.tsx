@@ -1,22 +1,28 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import React from 'react';
-import AppLayout from '~components/app-layout';
-import SplitPanel from '~components/split-panel';
-import Box from '~components/box';
-import Table from '~components/table';
-import PropertyFilter from '~components/property-filter';
-import Header from '~components/header';
-import Button from '~components/button';
-import ScreenshotArea from '../utils/screenshot-area';
-import { Navigation, Tools, Breadcrumbs } from '../app-layout/utils/content-blocks';
-import * as toolsContent from '../app-layout/utils/tools-content';
-import labels from '../app-layout/utils/labels';
-import { allItems, states, TableItem } from './table.data';
-import { columnDefinitions, i18nStrings, filteringProperties } from './common-props';
+import React, { useState } from 'react';
+
 import { useCollection } from '@cloudscape-design/collection-hooks';
 
+import AppLayout from '~components/app-layout';
+import Box from '~components/box';
+import Button from '~components/button';
+import Header from '~components/header';
+import I18nProvider from '~components/i18n';
+import messages from '~components/i18n/messages/all.en';
+import PropertyFilter from '~components/property-filter/internal';
+import SplitPanel from '~components/split-panel';
+import Table from '~components/table';
+
+import { Breadcrumbs, Navigation, Tools } from '../app-layout/utils/content-blocks';
+import appLayoutLabels from '../app-layout/utils/labels';
+import * as toolsContent from '../app-layout/utils/tools-content';
+import ScreenshotArea from '../utils/screenshot-area';
+import { columnDefinitions, filteringProperties, labels } from './common-props';
+import { allItems, states, TableItem } from './table.data';
+
 export default function () {
+  const [splitPanelOpen, setSplitPanelOpen] = useState(true);
   const { items, collectionProps, actions, propertyFilterProps } = useCollection(allItems, {
     propertyFiltering: {
       empty: 'empty',
@@ -50,53 +56,59 @@ export default function () {
 
   return (
     <ScreenshotArea gutters={false}>
-      <AppLayout
-        ariaLabels={labels}
-        breadcrumbs={<Breadcrumbs />}
-        navigation={<Navigation />}
-        tools={<Tools>{toolsContent.long}</Tools>}
-        splitPanelOpen={true}
-        splitPanel={
-          <SplitPanel
-            header="Split panel header"
-            i18nStrings={{
-              preferencesTitle: 'Preferences',
-              preferencesPositionLabel: 'Split panel position',
-              preferencesPositionDescription: 'Choose the default split panel position for the service.',
-              preferencesPositionSide: 'Side',
-              preferencesPositionBottom: 'Bottom',
-              preferencesConfirm: 'Confirm',
-              preferencesCancel: 'Cancel',
-              closeButtonAriaLabel: 'Close panel',
-              openButtonAriaLabel: 'Open panel',
-              resizeHandleAriaLabel: 'Slider',
-            }}
-          >
-            {' '}
-          </SplitPanel>
-        }
-        content={
-          <Table<TableItem>
-            className="main-content"
-            stickyHeader={true}
-            header={<Header headingTagOverride={'h1'}>Instances</Header>}
-            items={items}
-            {...collectionProps}
-            filter={
-              <PropertyFilter
-                {...propertyFilterProps}
-                filteringOptions={filteringOptions}
-                virtualScroll={true}
-                countText={`${items.length} matches`}
-                i18nStrings={i18nStrings}
-                expandToViewport={true}
-                filteringEmpty="No properties"
-              />
-            }
-            columnDefinitions={columnDefinitions.slice(0, 2)}
-          />
-        }
-      />
+      <I18nProvider messages={[messages]} locale="en">
+        <AppLayout
+          ariaLabels={appLayoutLabels}
+          breadcrumbs={<Breadcrumbs />}
+          navigation={<Navigation />}
+          tools={<Tools>{toolsContent.long}</Tools>}
+          splitPanelOpen={splitPanelOpen}
+          onSplitPanelToggle={({ detail }) => setSplitPanelOpen(detail.open)}
+          splitPanel={
+            <SplitPanel
+              header="Split panel header"
+              i18nStrings={{
+                preferencesTitle: 'Preferences',
+                preferencesPositionLabel: 'Split panel position',
+                preferencesPositionDescription: 'Choose the default split panel position for the service.',
+                preferencesPositionSide: 'Side',
+                preferencesPositionBottom: 'Bottom',
+                preferencesConfirm: 'Confirm',
+                preferencesCancel: 'Cancel',
+                closeButtonAriaLabel: 'Close panel',
+                openButtonAriaLabel: 'Open panel',
+                resizeHandleAriaLabel: 'Slider',
+              }}
+            >
+              {' '}
+            </SplitPanel>
+          }
+          content={
+            <Table<TableItem>
+              className="main-content"
+              stickyHeader={true}
+              header={<Header headingTagOverride={'h1'}>Instances</Header>}
+              items={items}
+              {...collectionProps}
+              filter={
+                <PropertyFilter
+                  {...labels}
+                  {...propertyFilterProps}
+                  filteringOptions={filteringOptions}
+                  virtualScroll={true}
+                  countText={`${items.length} matches`}
+                  enableTokenGroups={true}
+                  expandToViewport={true}
+                  filteringEmpty="No properties"
+                  customGroupsText={[]}
+                  disableFreeTextFiltering={false}
+                />
+              }
+              columnDefinitions={columnDefinitions.slice(0, 2)}
+            />
+          }
+        />
+      </I18nProvider>
     </ScreenshotArea>
   );
 }

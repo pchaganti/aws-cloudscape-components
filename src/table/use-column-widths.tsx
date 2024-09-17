@@ -1,9 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+
 import { useResizeObserver, useStableCallback } from '@cloudscape-design/component-toolkit/internal';
-import React, { useEffect, useRef, useState, createContext, useContext } from 'react';
-import { setElementWidths } from './column-widths-utils';
 import { getLogicalBoundingClientRect } from '@cloudscape-design/component-toolkit/internal';
+
+import { setElementWidths } from './column-widths-utils';
 
 export const DEFAULT_COLUMN_WIDTH = 120;
 
@@ -97,7 +99,11 @@ export function ColumnWidthsProvider({ visibleColumns, resizableColumns, contain
     }
 
     if (sticky) {
-      return { width: cellsRef.current.get(column.id)?.offsetWidth || (columnWidths?.get(column.id) ?? column.width) };
+      return {
+        width:
+          cellsRef.current.get(column.id)?.getBoundingClientRect().width ||
+          (columnWidths?.get(column.id) ?? column.width),
+      };
     }
 
     if (resizableColumns && columnWidths) {
@@ -140,7 +146,7 @@ export function ColumnWidthsProvider({ visibleColumns, resizableColumns, contain
   // Observes container size and requests an update to the last cell width as it depends on the container's width.
   useResizeObserver(containerRef, ({ contentBoxWidth: containerWidth }) => {
     containerWidthRef.current = containerWidth;
-    updateColumnWidths();
+    requestAnimationFrame(() => updateColumnWidths());
   });
 
   // The widths of the dynamically added columns (after the first render) if not set explicitly

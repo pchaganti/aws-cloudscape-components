@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import React, { useContext } from 'react';
 
+import { Box, ButtonDropdownProps, Checkbox } from '~components';
 import Input from '~components/input';
 import TopNavigation from '~components/top-navigation';
-import { I18N_STRINGS } from './common';
+
 import AppContext, { AppContextType } from '../app/app-context';
-import { Box, Checkbox } from '~components';
+import { I18N_STRINGS } from './common';
 
 type PageContext = React.Context<
   AppContextType<{
@@ -14,12 +15,13 @@ type PageContext = React.Context<
   }>
 >;
 
-const profileActions = [
-  { type: 'button', id: 'profile', text: 'Profile' },
-  { type: 'button', id: 'preferences', text: 'Preferences' },
-  { type: 'button', id: 'security', text: 'Security' },
+const profileActions: ButtonDropdownProps.ItemOrGroup[] = [
+  { id: 'profile', text: 'Profile' },
+  { id: 'preferences', text: 'Preferences' },
+  { id: 'security', text: 'Security' },
+  { itemType: 'checkbox', id: 'security-checkbox', text: 'Security [Checkbox]', checked: true },
   {
-    type: 'menu-dropdown',
+    itemType: 'group',
     id: 'support-group',
     text: 'Support',
     items: [
@@ -32,9 +34,10 @@ const profileActions = [
       },
       { id: 'feedback', text: 'Feedback', href: '#', external: true, externalIconAriaLabel: ' (opens in new tab)' },
       { id: 'support', text: 'Customer support' },
+      { itemType: 'checkbox', id: 'support-checkbox', text: 'Support [Checkbox]', checked: true },
     ],
   },
-  { type: 'button', id: 'signout', text: 'Sign out' },
+  { id: 'signout', text: 'Sign out' },
 ];
 
 const notificationActions = [
@@ -93,7 +96,7 @@ export default function TopNavigationPage() {
         i18nStrings={I18N_STRINGS}
         identity={{
           href: '#',
-          title: 'Title with an href',
+          title: 'Title with an href that is longer',
         }}
         utilities={[
           {

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { BasePageObject } from '@cloudscape-design/browser-test-tools/page-objects';
 import useBrowser from '@cloudscape-design/browser-test-tools/use-browser';
+
 import createWrapper from '../../../../lib/components/test-utils/selectors';
 
 interface ExtendedWindow extends Window {
@@ -290,9 +291,9 @@ describe('Single-page create', () => {
         stepName: 'Form Header',
         stepNumber: 1,
         subStepName: 'Container 1 - header',
-        fieldErrorContext: 'errors.triggered',
-        fieldIdentifier: 'field1',
-        subStepErrorContext: 'errors.fields',
+        fieldErrorContext: null,
+        fieldIdentifier: null,
+        subStepErrorContext: null,
       });
 
       expect(funnelSubStepErrorEvent.resolvedProps).toEqual({
@@ -325,7 +326,7 @@ describe('Single-page create', () => {
       expect(funnelErrorEvent.props).toEqual({
         funnelInteractionId: FUNNEL_INTERACTION_ID,
         funnelIdentifier: FUNNEL_IDENTIFIER,
-        funnelErrorContext: 'errors.validation',
+        funnelErrorContext: null,
       });
     })
   );

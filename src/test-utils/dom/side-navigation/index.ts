@@ -1,7 +1,9 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import { ComponentWrapper, ElementWrapper } from '@cloudscape-design/test-utils-core/dom';
+
 import ExpandableSectionWrapper from '../expandable-section';
+
 import styles from '../../../side-navigation/styles.selectors.js';
 
 export default class SideNavigationWrapper extends ComponentWrapper {
@@ -13,6 +15,10 @@ export default class SideNavigationWrapper extends ComponentWrapper {
 
   findHeaderLink(): ElementWrapper<HTMLAnchorElement> | null {
     return this.findByClassName(styles['header-link']);
+  }
+
+  findItemsControl(): ElementWrapper | null {
+    return this.findByClassName(styles['items-control']);
   }
 
   findLinkByHref(href: string): ElementWrapper<HTMLAnchorElement> | null {

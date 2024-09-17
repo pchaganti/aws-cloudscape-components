@@ -1,27 +1,33 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
+
+import { DropdownOption } from '~components/internal/components/option/interfaces';
 import Item from '~components/select/parts/item';
-import SpaceBetween from '~components/space-between';
+import { ItemProps } from '~components/select/parts/item';
+
 import createPermutations from '../utils/permutations';
 import PermutationsView from '../utils/permutations-view';
 import ScreenshotArea from '../utils/screenshot-area';
-import { ItemProps } from '~components/select/parts/item';
-import { DropdownOption } from '~components/internal/components/option/interfaces';
+
+const complexOption: DropdownOption = {
+  option: {
+    value: 'Complex option',
+    labelTag: 'tag',
+    description: 'description',
+    iconName: 'share',
+    tags: ['tag 1', 'tag 2', 'tag 3'],
+    filteringTags: ['tag 1', 'tag 2'],
+  },
+};
 
 const options: Record<string, DropdownOption> = {
   simpleOption: {
     option: { value: 'Option 1' },
   },
-  complexOption: {
-    option: {
-      value: 'Complex option',
-      labelTag: 'tag',
-      description: 'description',
-      iconName: 'share',
-      tags: ['tag 1', 'tag 2', 'tag 3'],
-      filteringTags: ['tag 1', 'tag 2'],
-    },
+  complexOption,
+  complexOptionGroup: {
+    option: { ...complexOption.option, options: [complexOption.option] },
   },
   longOption: {
     option: {
@@ -129,6 +135,13 @@ const permutations = createPermutations<ItemProps>([
     selected: [true],
     hasCheckbox: [false],
   },
+  {
+    option: [options.complexOptionGroup],
+    highlighted: [false],
+    highlightType: ['keyboard'],
+    selected: [true],
+    hasCheckbox: [false, true],
+  },
 ]);
 
 export default function InputPermutations() {
@@ -136,11 +149,9 @@ export default function InputPermutations() {
     <>
       <h1>Select item permutations</h1>
       <ScreenshotArea>
-        <SpaceBetween size="xs">
-          <ul role="listbox" aria-label="list">
-            <PermutationsView permutations={permutations} render={permutation => <Item {...permutation} />} />
-          </ul>
-        </SpaceBetween>
+        <ul role="listbox" aria-label="list">
+          <PermutationsView permutations={permutations} render={permutation => <Item {...permutation} />} />
+        </ul>
       </ScreenshotArea>
     </>
   );

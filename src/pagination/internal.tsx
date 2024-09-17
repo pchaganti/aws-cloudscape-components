@@ -1,15 +1,23 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import clsx from 'clsx';
 import React from 'react';
-import InternalIcon from '../icon/internal';
-import { fireNonCancelableEvent } from '../internal/events';
-import { getBaseProps } from '../internal/base-component';
-import styles from './styles.css.js';
-import { getPaginationState, range } from './utils';
-import { InternalBaseComponentProps } from '../internal/hooks/use-base-component';
-import { PaginationProps } from './interfaces';
+import clsx from 'clsx';
+
+import {
+  copyAnalyticsMetadataAttribute,
+  getAnalyticsMetadataAttribute,
+} from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+
 import { useInternalI18n } from '../i18n/context';
+import InternalIcon from '../icon/internal';
+import { getBaseProps } from '../internal/base-component';
+import { fireNonCancelableEvent } from '../internal/events';
+import { InternalBaseComponentProps } from '../internal/hooks/use-base-component';
+import { GeneratedAnalyticsMetadataPaginationClick } from './analytics-metadata/interfaces';
+import { PaginationProps } from './interfaces';
+import { getPaginationState, range } from './utils';
+
+import styles from './styles.css.js';
 
 const defaultAriaLabels: Required<PaginationProps.Labels> = {
   nextPageLabel: '',
@@ -36,13 +44,14 @@ function PageButton({
   isCurrent = false,
   children,
   onClick,
+  ...rest
 }: PageButtonProps) {
   function handleClick(event: React.MouseEvent) {
     event.preventDefault();
     onClick(pageIndex);
   }
   return (
-    <li className={styles['page-item']}>
+    <li className={styles['page-item']} {...copyAnalyticsMetadataAttribute(rest)}>
       <button
         className={clsx(
           className,
@@ -55,6 +64,14 @@ function PageButton({
         disabled={disabled}
         onClick={handleClick}
         aria-current={isCurrent}
+        {...(disabled
+          ? {}
+          : getAnalyticsMetadataAttribute({
+              action: 'click',
+              detail: {
+                label: { root: 'self' },
+              },
+            } as GeneratedAnalyticsMetadataPaginationClick))}
       >
         {children}
       </button>
@@ -64,7 +81,18 @@ function PageButton({
 
 function PageNumber({ pageIndex, ...rest }: PageButtonProps) {
   return (
-    <PageButton className={styles['page-number']} pageIndex={pageIndex} {...rest}>
+    <PageButton
+      className={styles['page-number']}
+      pageIndex={pageIndex}
+      {...rest}
+      {...(rest.disabled
+        ? {}
+        : getAnalyticsMetadataAttribute({
+            detail: {
+              position: `${pageIndex}`,
+            },
+          }))}
+    >
       {pageIndex}
     </PageButton>
   );
@@ -117,6 +145,9 @@ export default function InternalPagination({
     fireNonCancelableEvent(onChange, { currentPageIndex: requestedPageIndex });
   }
 
+  const previousButtonDisabled = disabled || currentPageIndex === 1;
+  const nextButtonDisabled = disabled || (!openEnd && (pagesCount === 0 || currentPageIndex === pagesCount));
+
   return (
     <ul
       aria-label={paginationLabel}
@@ -128,8 +159,15 @@ export default function InternalPagination({
         className={styles.arrow}
         pageIndex={currentPageIndex - 1}
         ariaLabel={previousPageLabel ?? defaultAriaLabels.nextPageLabel}
-        disabled={disabled || currentPageIndex === 1}
+        disabled={previousButtonDisabled}
         onClick={handlePrevPageClick}
+        {...(previousButtonDisabled
+          ? {}
+          : getAnalyticsMetadataAttribute({
+              detail: {
+                position: 'prev',
+              },
+            }))}
       >
         <InternalIcon name="angle-left" variant={disabled ? 'disabled' : 'normal'} />
       </PageButton>
@@ -165,8 +203,15 @@ export default function InternalPagination({
         className={styles.arrow}
         pageIndex={currentPageIndex + 1}
         ariaLabel={nextPageLabel ?? defaultAriaLabels.nextPageLabel}
-        disabled={disabled || (!openEnd && (pagesCount === 0 || currentPageIndex === pagesCount))}
+        disabled={nextButtonDisabled}
         onClick={handleNextPageClick}
+        {...(nextButtonDisabled
+          ? {}
+          : getAnalyticsMetadataAttribute({
+              detail: {
+                position: 'next',
+              },
+            }))}
       >
         <InternalIcon name="angle-right" variant={disabled ? 'disabled' : 'normal'} />
       </PageButton>

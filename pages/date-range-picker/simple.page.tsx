@@ -1,16 +1,18 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React, { useState } from 'react';
+
 import {
   Box,
+  Checkbox,
   DateRangePicker,
   DateRangePickerProps,
-  Link,
-  Checkbox,
-  SpaceBetween,
-  SegmentedControl,
   FormField,
+  Link,
+  SegmentedControl,
+  SpaceBetween,
 } from '~components';
+
 import { i18nStrings, i18nStringsDateOnly, isValid, relativeOptions } from './common';
 
 export default function DatePickerScenario() {
@@ -61,7 +63,8 @@ export default function DatePickerScenario() {
             dateOnly={dateOnly}
             timeInputFormat="hh:mm"
             rangeSelectorMode={rangeSelectorMode}
-            isDateEnabled={date => date.getDate() !== 15}
+            isDateEnabled={date => date.getDate() !== 14 && date.getDate() !== 15}
+            dateDisabledReason={date => (date.getDate() === 14 || date.getDate() === 15 ? 'Disabled reason' : '')}
             getTimeOffset={date => -1 * date.getTimezoneOffset()}
             invalid={invalid}
             warning={warning}

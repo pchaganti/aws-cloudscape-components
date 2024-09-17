@@ -5,16 +5,16 @@
 
 @use '../../styles/tokens' as awsui;
 @use '../../styles' as styles;
-@use '../../hooks/focus-visible' as focus-visible;
+@use '@cloudscape-design/component-toolkit/internal/focus-visible' as focus-visible;
 
 .root {
   display: flex;
-  flex-wrap: wrap;
   gap: awsui.$space-scaled-xs;
 
   &.horizontal {
     gap: awsui.$space-xs;
     flex-direction: row;
+    flex-wrap: wrap;
   }
   &.vertical {
     flex-direction: column;
@@ -32,11 +32,11 @@
   &.horizontal,
   &.vertical {
     display: flex;
-    flex-wrap: wrap;
     gap: awsui.$space-xs;
   }
   &.horizontal {
     flex-direction: row;
+    flex-wrap: wrap;
   }
   &.vertical {
     flex-direction: column;

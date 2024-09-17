@@ -1,8 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import { BaseNavigationDetail, CancelableEventHandler } from '../internal/events';
 import { LinkItem } from '../button-dropdown/interfaces';
 import { BaseComponentProps } from '../internal/base-component';
+import { BaseNavigationDetail, CancelableEventHandler } from '../internal/events';
 import { InternalBaseComponentProps } from '../internal/hooks/use-base-component';
 
 export interface BreadcrumbGroupProps<T extends BreadcrumbGroupProps.Item = BreadcrumbGroupProps.Item>
@@ -17,7 +17,7 @@ export interface BreadcrumbGroupProps<T extends BreadcrumbGroupProps.Item = Brea
    * to ensure that valid markup is generated.
 
    * Note: The last breadcrumb item is automatically considered the current item, and it's
-   * attributed with the proper `aria-current` value and rendered as inactive.
+   * not a link.
    */
   items: ReadonlyArray<T>;
   /**
@@ -56,7 +56,10 @@ export namespace BreadcrumbGroupProps {
 }
 
 export type InternalBreadcrumbGroupProps<T extends BreadcrumbGroupProps.Item = BreadcrumbGroupProps.Item> =
-  BreadcrumbGroupProps<T> & InternalBaseComponentProps;
+  BreadcrumbGroupProps<T> &
+    InternalBaseComponentProps & {
+      __injectAnalyticsComponentMetadata?: boolean;
+    };
 
 export interface BreadcrumbItemProps<T extends BreadcrumbGroupProps.Item> {
   item: T;

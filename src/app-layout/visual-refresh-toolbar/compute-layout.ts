@@ -1,8 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { SPLIT_PANEL_MIN_WIDTH } from '../split-panel';
 import { AppLayoutPropsWithDefaults } from '../interfaces';
+import { SPLIT_PANEL_MIN_WIDTH } from '../split-panel';
 
 interface HorizontalLayoutInput {
   navigationOpen: boolean;
@@ -13,6 +13,7 @@ interface HorizontalLayoutInput {
   splitPanelOpen: boolean;
   splitPanelPosition: 'side' | 'bottom' | undefined;
   splitPanelSize: number;
+  isMobile: boolean;
 }
 
 export function computeHorizontalLayout({
@@ -24,6 +25,7 @@ export function computeHorizontalLayout({
   splitPanelOpen,
   splitPanelPosition,
   splitPanelSize,
+  isMobile,
 }: HorizontalLayoutInput) {
   const contentPadding = 2 * 24; // space-xl
   const activeNavigationWidth = navigationOpen ? navigationWidth : 0;
@@ -33,7 +35,7 @@ export function computeHorizontalLayout({
     placement.inlineSize - minContentWidth - contentPadding - activeNavigationWidth
   );
 
-  const splitPanelForcedPosition = resizableSpaceAvailable - activeDrawerSize < SPLIT_PANEL_MIN_WIDTH;
+  const splitPanelForcedPosition = resizableSpaceAvailable - activeDrawerSize < SPLIT_PANEL_MIN_WIDTH || isMobile;
   const resolvedSplitPanelPosition = splitPanelForcedPosition ? 'bottom' : splitPanelPosition ?? 'bottom';
   const sideSplitPanelSize = resolvedSplitPanelPosition === 'side' && splitPanelOpen ? splitPanelSize ?? 0 : 0;
   const maxSplitPanelSize = resizableSpaceAvailable - activeDrawerSize;
@@ -50,7 +52,7 @@ export function computeHorizontalLayout({
 
 interface VerticalLayoutInput {
   topOffset: number;
-  hasToolbar: boolean;
+  hasVisibleToolbar: boolean;
   toolbarHeight: number;
   stickyNotifications: boolean;
   notificationsHeight: number;
@@ -60,24 +62,28 @@ export interface VerticalLayoutOutput {
   toolbar: number;
   notifications: number;
   header: number;
+  drawers: number;
 }
 
 export function computeVerticalLayout({
   topOffset,
-  hasToolbar,
+  hasVisibleToolbar,
   toolbarHeight,
   stickyNotifications,
   notificationsHeight,
 }: VerticalLayoutInput): VerticalLayoutOutput {
   const toolbar = topOffset;
   let notifications = topOffset;
-  if (hasToolbar) {
+  let drawers = topOffset;
+
+  if (hasVisibleToolbar) {
     notifications += toolbarHeight;
+    drawers += toolbarHeight;
   }
   let header = notifications;
   if (stickyNotifications) {
     header += notificationsHeight;
   }
 
-  return { toolbar, notifications, header };
+  return { toolbar, notifications, header, drawers };
 }

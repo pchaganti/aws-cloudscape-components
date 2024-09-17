@@ -3,37 +3,51 @@
 import React from 'react';
 import clsx from 'clsx';
 
-import { Transition } from '../transition';
-import PopoverContainer from '../../../popover/container';
+import PopoverArrow from '../../../popover/arrow';
 import PopoverBody from '../../../popover/body';
+import PopoverContainer from '../../../popover/container';
+import { PopoverProps } from '../../../popover/interfaces';
 import Portal from '../portal';
-import popoverStyles from '../../../popover/styles.css.js';
+import { Transition } from '../transition';
+
 import styles from './styles.css.js';
 
 export interface TooltipProps {
-  value: number | string;
+  value: React.ReactNode;
   trackRef: React.RefObject<HTMLElement | SVGElement>;
+  trackKey?: string | number;
+  position?: 'top' | 'right' | 'bottom' | 'left';
+  className?: string;
   contentAttributes?: React.HTMLAttributes<HTMLDivElement>;
+  size?: PopoverProps['size'];
 }
 
-export default function Tooltip({ value, trackRef, contentAttributes = {} }: TooltipProps) {
+export default function Tooltip({
+  value,
+  trackRef,
+  trackKey,
+  className,
+  contentAttributes = {},
+  position = 'top',
+  size = 'small',
+}: TooltipProps) {
+  if (!trackKey && (typeof value === 'string' || typeof value === 'number')) {
+    trackKey = value;
+  }
+
   return (
     <Portal>
-      <div className={styles.root} {...contentAttributes}>
+      <div className={clsx(styles.root, className)} {...contentAttributes} data-testid={trackKey}>
         <Transition in={true}>
           {() => (
             <PopoverContainer
               trackRef={trackRef}
-              trackKey={value}
-              size="small"
+              trackKey={trackKey}
+              size={size}
               fixedWidth={false}
-              position="top"
-              arrow={position => (
-                <div className={clsx(popoverStyles.arrow, popoverStyles[`arrow-position-${position}`])}>
-                  <div className={popoverStyles['arrow-outer']} />
-                  <div className={popoverStyles['arrow-inner']} />
-                </div>
-              )}
+              position={position}
+              zIndex={7000}
+              arrow={position => <PopoverArrow position={position} />}
             >
               <PopoverBody dismissButton={false} dismissAriaLabel={undefined} onDismiss={undefined} header={undefined}>
                 {value}

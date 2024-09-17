@@ -1,9 +1,15 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import { DrawersApiInternal, DrawersApiPublic, DrawersController } from './controllers/drawers';
-import { ActionsApiInternal, ActionsApiPublic, ActionButtonsController } from './controllers/action-buttons';
-import { BreadcrumbsApiInternal, BreadcrumbsController } from './controllers/breadcrumbs';
 import { BreadcrumbGroupProps } from '../../breadcrumb-group/interfaces';
+import { ActionButtonsController, ActionsApiInternal, ActionsApiPublic } from './controllers/action-buttons';
+import {
+  AlertFlashContentApiInternal,
+  AlertFlashContentApiPublic,
+  AlertFlashContentController,
+} from './controllers/alert-flash-content';
+import { AppLayoutWidgetApiInternal, AppLayoutWidgetController } from './controllers/app-layout-widget';
+import { BreadcrumbsApiInternal, BreadcrumbsController } from './controllers/breadcrumbs';
+import { DrawersApiInternal, DrawersApiPublic, DrawersController } from './controllers/drawers';
 
 const storageKey = Symbol.for('awsui-plugin-api');
 
@@ -11,12 +17,17 @@ interface AwsuiApi {
   awsuiPlugins: {
     appLayout: DrawersApiPublic;
     alert: ActionsApiPublic;
+    alertContent: AlertFlashContentApiPublic;
     flashbar: ActionsApiPublic;
+    flashContent: AlertFlashContentApiPublic;
   };
   awsuiPluginsInternal: {
     appLayout: DrawersApiInternal;
+    appLayoutWidget: AppLayoutWidgetApiInternal;
     alert: ActionsApiInternal;
+    alertContent: AlertFlashContentApiInternal;
     flashbar: ActionsApiInternal;
+    flashContent: AlertFlashContentApiInternal;
     breadcrumbs: BreadcrumbsApiInternal<BreadcrumbGroupProps>;
   };
 }
@@ -65,9 +76,22 @@ function installApi(api: DeepPartial<AwsuiApi>): AwsuiApi {
   api.awsuiPlugins.appLayout = appLayoutDrawers.installPublic(api.awsuiPlugins.appLayout);
   api.awsuiPluginsInternal.appLayout = appLayoutDrawers.installInternal(api.awsuiPluginsInternal.appLayout);
 
+  const appLayoutController = new AppLayoutWidgetController();
+  api.awsuiPluginsInternal.appLayoutWidget = appLayoutController.installInternal(
+    api.awsuiPluginsInternal.appLayoutWidget
+  );
+
   const alertActions = new ActionButtonsController();
   api.awsuiPlugins.alert = alertActions.installPublic(api.awsuiPlugins.alert);
   api.awsuiPluginsInternal.alert = alertActions.installInternal(api.awsuiPluginsInternal.alert);
+
+  const alertContent = new AlertFlashContentController();
+  api.awsuiPlugins.alertContent = alertContent.installPublic(api.awsuiPlugins.alertContent);
+  api.awsuiPluginsInternal.alertContent = alertContent.installInternal(api.awsuiPluginsInternal.alertContent);
+
+  const flashContent = new AlertFlashContentController();
+  api.awsuiPlugins.flashContent = flashContent.installPublic(api.awsuiPlugins.flashContent);
+  api.awsuiPluginsInternal.flashContent = flashContent.installInternal(api.awsuiPluginsInternal.flashContent);
 
   const flashbarActions = new ActionButtonsController();
   api.awsuiPlugins.flashbar = flashbarActions.installPublic(api.awsuiPlugins.flashbar);

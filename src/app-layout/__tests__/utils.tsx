@@ -2,20 +2,22 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as React from 'react';
 import { render } from '@testing-library/react';
+
+import { setGlobalFlag } from '@cloudscape-design/component-toolkit/internal/testing';
+
 import AppLayout, { AppLayoutProps } from '../../../lib/components/app-layout';
-import { SplitPanelProps } from '../../../lib/components/split-panel';
-import createWrapper, { AppLayoutWrapper, ElementWrapper } from '../../../lib/components/test-utils/dom';
+import customCssProps from '../../../lib/components/internal/generated/custom-css-properties';
 import { useMobile } from '../../../lib/components/internal/hooks/use-mobile';
 import { useVisualRefresh } from '../../../lib/components/internal/hooks/use-visual-mode';
 import { findUpUntil } from '../../../lib/components/internal/utils/dom';
-import visualRefreshStyles from '../../../lib/components/app-layout/visual-refresh/styles.css.js';
-import visualRefreshToolbarStyles from '../../../lib/components/app-layout/visual-refresh-toolbar/toolbar/trigger-button/styles.css.js';
-import testutilStyles from '../../../lib/components/app-layout/test-classes/styles.css.js';
-import customCssProps from '../../../lib/components/internal/generated/custom-css-properties';
-import iconStyles from '../../../lib/components/icon/styles.css.js';
-import { awsuiGlobalFlagsSymbol, FlagsHolder } from '../../../lib/components/internal/utils/global-flags';
+import { SplitPanelProps } from '../../../lib/components/split-panel';
+import createWrapper, { AppLayoutWrapper, ElementWrapper } from '../../../lib/components/test-utils/dom';
 
-declare const window: Window & FlagsHolder;
+import testutilStyles from '../../../lib/components/app-layout/test-classes/styles.css.js';
+import visualRefreshStyles from '../../../lib/components/app-layout/visual-refresh/styles.css.js';
+import visualRefreshToolbarStyles from '../../../lib/components/app-layout/visual-refresh-toolbar/skeleton/styles.css.js';
+import visualRefreshToolbarTriggerButtonStyles from '../../../lib/components/app-layout/visual-refresh-toolbar/toolbar/trigger-button/styles.css.js';
+import iconStyles from '../../../lib/components/icon/styles.css.js';
 
 // Mock element queries result. Note that in order to work, this mock should be applied first, before the AppLayout is required
 jest.mock('../../../lib/components/internal/hooks/use-mobile', () => ({
@@ -38,9 +40,8 @@ export function renderComponent(jsx: React.ReactElement) {
   const wrapper = createWrapper(container).findAppLayout()!;
 
   const isUsingGridLayout = wrapper.getElement().classList.contains(visualRefreshStyles.layout);
-  const isUsingMobile = !!wrapper.findByClassName(testutilStyles['mobile-bar']);
 
-  return { wrapper, rerender, isUsingGridLayout, isUsingMobile, container };
+  return { wrapper, rerender, isUsingGridLayout, container };
 }
 
 type Theme = 'refresh' | 'refresh-toolbar' | 'classic';
@@ -72,17 +73,18 @@ export function describeEachAppLayout(
         beforeEach(() => {
           (useMobile as jest.Mock).mockReturnValue(size === 'mobile');
           (useVisualRefresh as jest.Mock).mockReturnValue(theme !== 'classic');
-          window[awsuiGlobalFlagsSymbol] = { appLayoutWidget: theme === 'refresh-toolbar' };
+          setGlobalFlag('appLayoutWidget', theme === 'refresh-toolbar');
         });
         afterEach(() => {
           (useMobile as jest.Mock).mockReset();
           (useVisualRefresh as jest.Mock).mockReset();
-          delete window[awsuiGlobalFlagsSymbol];
+          setGlobalFlag('appLayoutWidget', undefined);
         });
         test('mocks applied correctly', () => {
-          const { isUsingGridLayout, isUsingMobile } = renderComponent(<AppLayout />);
-          expect(isUsingGridLayout).toEqual(theme === 'refresh');
-          expect(isUsingMobile).toEqual(size === 'mobile');
+          const { wrapper } = renderComponent(<AppLayout />);
+          expect(!!wrapper.matches(`.${visualRefreshStyles.layout}`)).toEqual(theme === 'refresh');
+          expect(!!wrapper.matches(`.${visualRefreshToolbarStyles.root}`)).toEqual(theme === 'refresh-toolbar');
+          expect(!!wrapper.findByClassName(testutilStyles['mobile-bar'])).toEqual(size === 'mobile');
         });
         callback({ theme, size });
       });
@@ -114,7 +116,7 @@ export function isDrawerTriggerWithBadge(wrapper: AppLayoutWrapper, triggerId: s
     // Visual refresh implementation
     trigger.getElement().classList.contains(visualRefreshStyles.badge) ||
     // Visual refresh toolbar implementation
-    trigger.getElement().classList.contains(visualRefreshToolbarStyles.badge) ||
+    trigger.getElement().classList.contains(visualRefreshToolbarTriggerButtonStyles.badge) ||
     // Classic implementation
     !!trigger.findByClassName(iconStyles.badge)
   );

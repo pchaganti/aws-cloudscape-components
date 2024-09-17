@@ -5,7 +5,7 @@
 
 @use '../internal/styles' as styles;
 @use '../internal/styles/tokens' as awsui;
-@use '../internal/hooks/focus-visible' as focus-visible;
+@use '@cloudscape-design/component-toolkit/internal/focus-visible' as focus-visible;
 
 @import './tab-header-bar';
 
@@ -61,4 +61,12 @@
     padding-block-end: awsui.$space-scaled-l;
     padding-inline: awsui.$space-container-horizontal;
   }
+}
+
+.disabled-reason-tooltip {
+  /* used in test-utils or tests */
+}
+
+.tabs-tab-focused {
+  /* used to manage focusable state for disabled with reason tabs */
 }

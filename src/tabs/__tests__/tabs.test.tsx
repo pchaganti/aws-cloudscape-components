@@ -2,12 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable @typescript-eslint/no-var-requires */
 import React from 'react';
-import { render } from '@testing-library/react';
-import Tabs, { TabsProps } from '../../../lib/components/tabs';
-import styles from '../../../lib/components/tabs/styles.css.js';
-import createWrapper, { TabsWrapper } from '../../../lib/components/test-utils/dom';
+import { fireEvent, render } from '@testing-library/react';
+
 import { KeyCode } from '@cloudscape-design/test-utils-core/dist/utils';
+
 import TestI18nProvider from '../../../lib/components/i18n/testing';
+import Tabs, { TabsProps } from '../../../lib/components/tabs';
+import createWrapper, { TabsWrapper } from '../../../lib/components/test-utils/dom';
+
+import styles from '../../../lib/components/tabs/styles.css.js';
 
 let mockHorizontalOverflow = false;
 jest.mock('../../../lib/components/tabs/scroll-utils', () => {
@@ -541,6 +544,50 @@ describe('Tabs', () => {
           expect(wrapper.findActiveTab()!.getElement()).toHaveFocus();
         });
 
+        test('does not focus on disabled tab', () => {
+          const { wrapper } = renderTabs(
+            <Tabs
+              tabs={defaultTabs.map(item => {
+                if (item.id === 'second') {
+                  return {
+                    ...item,
+                    disabled: true,
+                    href: undefined,
+                  };
+                }
+                return item;
+              })}
+            />
+          );
+
+          wrapper.findActiveTab()!.getElement().focus();
+          pressRight(wrapper);
+
+          expect(wrapper.findFocusedTab()!.getElement()).toHaveTextContent('Fourth tab');
+        });
+
+        test('does not focus on disabled tab with href', () => {
+          const { wrapper } = renderTabs(
+            <Tabs
+              tabs={defaultTabs.map(item => {
+                if (item.id === 'second') {
+                  return {
+                    ...item,
+                    disabled: true,
+                    href: '#second',
+                  };
+                }
+                return item;
+              })}
+            />
+          );
+
+          wrapper.findActiveTab()!.getElement().focus();
+          pressRight(wrapper);
+
+          expect(wrapper.findFocusedTab()!.getElement()).toHaveTextContent('Fourth tab');
+        });
+
         test('does not fire the change event upon key interactions', () => {
           const changeSpy = jest.fn();
 
@@ -741,15 +788,13 @@ describe('Tabs', () => {
       expect(requestAnimationFrameSpy).not.toBeCalledTimes(0);
       requestAnimationFrameSpy.mockRestore();
     });
+
     test('renders the correct dismiss label', () => {
       const dismissibleButton = renderTabs(
         <Tabs tabs={actionDismissibleTabs} />
       ).wrapper.findDismissibleButtonByTabIndex(1);
       expect(dismissibleButton).toBeTruthy();
-      expect(dismissibleButton?.getElement().firstElementChild).toHaveAttribute(
-        'aria-label',
-        'first-tab-dismissible-button'
-      );
+      expect(dismissibleButton?.getElement()).toHaveAttribute('aria-label', 'first-tab-dismissible-button');
     });
 
     test('does not render the dismiss button when dismissible false', () => {
@@ -767,10 +812,9 @@ describe('Tabs', () => {
 
     test('calls onDismiss event', () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      const dismissibleButtonWrapper = renderTabs(
+      const dismissibleButton = renderTabs(
         <Tabs tabs={actionDismissibleTabs} activeTabId="first" />
       ).wrapper.findDismissibleButtonByTabId('first');
-      const dismissibleButton = dismissibleButtonWrapper?.find('button');
       dismissibleButton?.click();
       expect(consoleSpy).toHaveBeenCalledWith('I have been called!');
       consoleSpy.mockClear();
@@ -890,6 +934,252 @@ describe('Tabs', () => {
           expect(scrollLeftButton.getElement()).toHaveAttribute('aria-label', 'Custom scroll left');
           expect(scrollRightButton.getElement()).toHaveAttribute('aria-label', 'Custom scroll right');
         });
+      });
+    });
+
+    describe('Disabled with reason', () => {
+      test('has no tooltip open by default', () => {
+        const firstTabId = defaultTabs[0].id;
+        const { wrapper } = renderTabs(
+          <Tabs
+            tabs={defaultTabs.map(item => {
+              if (item.id === 'second') {
+                return {
+                  ...item,
+                  disabled: true,
+                  disabledReason: 'disabled reason',
+                };
+              }
+
+              return item;
+            })}
+            activeTabId={firstTabId}
+            onChange={() => void 0}
+          />
+        );
+
+        expect(wrapper.findTabLinkById('second')!.findDisabledReason()).toBe(null);
+      });
+
+      test('has no tooltip without disabledReason', () => {
+        const firstTabId = defaultTabs[0].id;
+        const { wrapper } = renderTabs(
+          <Tabs
+            tabs={defaultTabs.map(item => {
+              if (item.id === 'second') {
+                return {
+                  ...item,
+                  disabled: true,
+                };
+              }
+
+              return item;
+            })}
+            activeTabId={firstTabId}
+            onChange={() => void 0}
+          />
+        );
+
+        wrapper.findTabLinkById('second')!.focus();
+
+        expect(wrapper.findTabLinkById('second')!.findDisabledReason()).toBe(null);
+      });
+
+      test('open tooltip on focus', () => {
+        const firstTabId = defaultTabs[0].id;
+        const { wrapper } = renderTabs(
+          <Tabs
+            tabs={defaultTabs.map(item => {
+              if (item.id === 'second') {
+                return {
+                  ...item,
+                  disabled: true,
+                  disabledReason: 'disabled reason',
+                };
+              }
+
+              return item;
+            })}
+            activeTabId={firstTabId}
+            onChange={() => void 0}
+          />
+        );
+
+        wrapper.findTabLinkById('second')!.focus();
+
+        expect(wrapper.findTabLinkById('second')!.findDisabledReason()!.getElement()).toHaveTextContent(
+          'disabled reason'
+        );
+      });
+
+      test('closes tooltip on blur', () => {
+        const firstTabId = defaultTabs[0].id;
+        const { wrapper } = renderTabs(
+          <Tabs
+            tabs={defaultTabs.map(item => {
+              if (item.id === 'second') {
+                return {
+                  ...item,
+                  disabled: true,
+                  disabledReason: 'disabled reason',
+                };
+              }
+
+              return item;
+            })}
+            activeTabId={firstTabId}
+            onChange={() => void 0}
+          />
+        );
+
+        wrapper.findTabLinkById('second')!.focus();
+
+        expect(wrapper.findTabLinkById('second')!.findDisabledReason()!.getElement()).toHaveTextContent(
+          'disabled reason'
+        );
+
+        wrapper.findTabLinkById('second')!.blur();
+
+        expect(wrapper.findTabLinkById('second')!.findDisabledReason()).toBe(null);
+      });
+
+      test('open tooltip on mouseenter', () => {
+        const firstTabId = defaultTabs[0].id;
+        const { wrapper } = renderTabs(
+          <Tabs
+            tabs={defaultTabs.map(item => {
+              if (item.id === 'second') {
+                return {
+                  ...item,
+                  disabled: true,
+                  disabledReason: 'disabled reason',
+                };
+              }
+
+              return item;
+            })}
+            activeTabId={firstTabId}
+            onChange={() => void 0}
+          />
+        );
+
+        fireEvent.mouseEnter(wrapper.findTabLinkById('second')!.getElement());
+
+        expect(wrapper.findTabLinkById('second')!.findDisabledReason()!.getElement()).toHaveTextContent(
+          'disabled reason'
+        );
+      });
+
+      test('close tooltip on mouseleave', () => {
+        const firstTabId = defaultTabs[0].id;
+        const { wrapper } = renderTabs(
+          <Tabs
+            tabs={defaultTabs.map(item => {
+              if (item.id === 'second') {
+                return {
+                  ...item,
+                  disabled: true,
+                  disabledReason: 'disabled reason',
+                };
+              }
+
+              return item;
+            })}
+            activeTabId={firstTabId}
+            onChange={() => void 0}
+          />
+        );
+
+        fireEvent.mouseEnter(wrapper.findTabLinkById('second')!.getElement());
+
+        expect(wrapper.findTabLinkById('second')!.findDisabledReason()!.getElement()).toHaveTextContent(
+          'disabled reason'
+        );
+
+        fireEvent.mouseLeave(wrapper.findTabLinkById('second')!.getElement());
+
+        expect(wrapper.findTabLinkById('second')!.findDisabledReason()).toBe(null);
+      });
+
+      test('has no aria-describedby by default', () => {
+        const firstTabId = defaultTabs[0].id;
+        const { wrapper } = renderTabs(<Tabs tabs={defaultTabs} activeTabId={firstTabId} onChange={() => void 0} />);
+
+        expect(wrapper.findTabLinkById('second')!.getElement()).not.toHaveAttribute('aria-describedby');
+      });
+
+      test('has no aria-describedby without disabledReason', () => {
+        const firstTabId = defaultTabs[0].id;
+        const { wrapper } = renderTabs(
+          <Tabs
+            tabs={defaultTabs.map(item => {
+              if (item.id === 'second') {
+                return {
+                  ...item,
+                  disabled: true,
+                };
+              }
+
+              return item;
+            })}
+            activeTabId={firstTabId}
+            onChange={() => void 0}
+          />
+        );
+
+        expect(wrapper.findTabLinkById('second')!.getElement()).not.toHaveAttribute('aria-describedby');
+      });
+
+      test('has disabledReason a11y attributes', () => {
+        const firstTabId = defaultTabs[0].id;
+        const { wrapper } = renderTabs(
+          <Tabs
+            tabs={defaultTabs.map(item => {
+              if (item.id === 'second') {
+                return {
+                  ...item,
+                  disabled: true,
+                  disabledReason: 'disabled reason',
+                };
+              }
+
+              return item;
+            })}
+            activeTabId={firstTabId}
+            onChange={() => void 0}
+          />
+        );
+
+        expect(wrapper.findTabLinkById('second')!.getElement()).toHaveAttribute('aria-describedby');
+        const describedBy = wrapper.findTabLinkById('second')!.getElement().getAttribute('aria-describedby');
+        expect(wrapper.findTabLinkById('second')!.find(`[id="${describedBy}"]`)!.getElement()).toHaveTextContent(
+          'disabled reason'
+        );
+      });
+
+      test('shows active tab content when disabled with reason tab is focused', () => {
+        const { wrapper } = renderTabs(
+          <Tabs
+            tabs={defaultTabs.map(item => {
+              if (item.id === 'second') {
+                return {
+                  ...item,
+                  disabled: true,
+                  disabledReason: 'disabled reason',
+                };
+              }
+
+              return item;
+            })}
+          />
+        );
+
+        pressHome(wrapper);
+        pressRight(wrapper);
+
+        expect(wrapper.findActiveTab()!.getElement()).toHaveTextContent('First tab');
+        expect(wrapper.findTabContent()!.getElement()).toHaveTextContent('First content');
+        expect(wrapper.findFocusedTab()!.getElement()).toHaveTextContent('Second tab');
       });
     });
   });

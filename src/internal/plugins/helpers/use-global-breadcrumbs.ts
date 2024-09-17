@@ -1,9 +1,10 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { awsuiPluginsInternal } from '../api';
-import { getGlobalFlag } from '../../utils/global-flags';
+
+import { useAppLayoutToolbarEnabled } from '../../../app-layout/utils/feature-flags';
 import { BreadcrumbGroupProps } from '../../../breadcrumb-group/interfaces';
+import { awsuiPluginsInternal } from '../api';
 import { BreadcrumbsGlobalRegistration } from '../controllers/breadcrumbs';
 
 function useSetGlobalBreadcrumbsImplementation(props: BreadcrumbGroupProps<any>) {
@@ -30,7 +31,7 @@ function useSetGlobalBreadcrumbsImplementation(props: BreadcrumbGroupProps<any>)
 
 export function useSetGlobalBreadcrumbs<T extends BreadcrumbGroupProps.Item>(props: BreadcrumbGroupProps<T>) {
   // avoid additional side effects when this feature is not active
-  if (!getGlobalFlag('appLayoutWidget')) {
+  if (!useAppLayoutToolbarEnabled()) {
     return false;
   }
   // getGlobalFlag() value does not change without full page reload
@@ -38,14 +39,17 @@ export function useSetGlobalBreadcrumbs<T extends BreadcrumbGroupProps.Item>(pro
   return useSetGlobalBreadcrumbsImplementation(props);
 }
 
-export function useGetGlobalBreadcrumbs() {
+export function useGetGlobalBreadcrumbs(enabled: boolean) {
   const [discoveredBreadcrumbs, setDiscoveredBreadcrumbs] = useState<BreadcrumbGroupProps<any> | null>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     return awsuiPluginsInternal.breadcrumbs.registerAppLayout(breadcrumbs => {
       setDiscoveredBreadcrumbs(breadcrumbs);
     });
-  }, []);
+  }, [enabled]);
 
   return discoveredBreadcrumbs;
 }

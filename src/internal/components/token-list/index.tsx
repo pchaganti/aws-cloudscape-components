@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import React, { useState } from 'react';
-
-import TokenLimitToggle from './token-limit-toggle';
-import styles from './styles.css.js';
-import { TokenListProps } from './interfaces';
-import { useUniqueId } from '../../hooks/use-unique-id';
 import clsx from 'clsx';
-import { useTokenFocusController } from './token-focus-controller';
+
+import { useUniqueId } from '../../hooks/use-unique-id';
+import { TokenListProps } from './interfaces';
+import TokenLimitToggle from './token-limit-toggle';
+
+import styles from './styles.css.js';
+
+export { TokenListProps };
 
 export default function TokenList<Item>({
   items,
@@ -19,10 +21,8 @@ export default function TokenList<Item>({
   i18nStrings,
   limitShowFewerAriaLabel,
   limitShowMoreAriaLabel,
-  moveFocusNextToIndex,
   onExpandedClick = () => undefined,
 }: TokenListProps<Item>) {
-  const tokenListRef = useTokenFocusController({ moveFocusNextToIndex: moveFocusNextToIndex });
   const controlId = useUniqueId();
 
   const [expanded, setExpanded] = useState(false);
@@ -52,7 +52,7 @@ export default function TokenList<Item>({
 
   if (alignment === 'inline') {
     return (
-      <div ref={tokenListRef} className={clsx(styles.root, styles.horizontal)}>
+      <div className={clsx(styles.root, styles.horizontal)}>
         {hasItems && (
           <ul id={controlId} className={styles.list}>
             {visibleItems.map((item, itemIndex) => (
@@ -75,7 +75,7 @@ export default function TokenList<Item>({
   }
 
   return (
-    <div ref={tokenListRef} className={clsx(styles.root, styles.vertical)}>
+    <div className={clsx(styles.root, styles.vertical)}>
       {hasVisibleItems && (
         <ul id={controlId} className={clsx(styles.list, styles[alignment])}>
           {visibleItems.map((item, itemIndex) => (

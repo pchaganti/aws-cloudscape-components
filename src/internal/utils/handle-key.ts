@@ -1,10 +1,12 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import { KeyCode } from '../keycode';
 import { getIsRtl } from '@cloudscape-design/component-toolkit/internal';
 
+import { KeyCode } from '../keycode';
+import { isHTMLElement, isSVGElement } from './dom';
+
 export function isEventLike(event: any): event is EventLike {
-  return event.currentTarget instanceof HTMLElement || event.currentTarget instanceof SVGElement;
+  return isHTMLElement(event.currentTarget) || isSVGElement(event.currentTarget);
 }
 
 export interface EventLike {

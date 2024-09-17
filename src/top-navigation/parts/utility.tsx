@@ -4,17 +4,16 @@ import React from 'react';
 import clsx from 'clsx';
 
 import { InternalButton } from '../../button/internal';
-import InternalLink from '../../link/internal';
+import { isLinkItem } from '../../button-dropdown/utils/utils';
 import InternalIcon from '../../icon/internal';
 import MenuDropdown, { MenuDropdownProps } from '../../internal/components/menu-dropdown';
-
+import { fireCancelableEvent } from '../../internal/events';
+import { checkSafeUrl } from '../../internal/utils/check-safe-url';
+import { joinStrings } from '../../internal/utils/strings';
+import InternalLink from '../../link/internal';
 import { TopNavigationProps } from '../interfaces';
 
 import styles from '../styles.css.js';
-import { checkSafeUrl } from '../../internal/utils/check-safe-url';
-import { joinStrings } from '../../internal/utils/strings';
-import { fireCancelableEvent } from '../../internal/events';
-import { isLinkItem } from '../../button-dropdown/utils/utils';
 
 export interface UtilityProps {
   hideText: boolean;
@@ -111,11 +110,14 @@ export default function Utility({ hideText, definition, offsetRight }: UtilityPr
     const title = definition.title || definition.text;
     const shouldShowTitle = shouldHideText || !definition.text;
 
+    const items = excludeCheckboxes(definition.items);
+
     checkSafeUrlRecursively(definition.items);
 
     return (
       <MenuDropdown
         {...definition}
+        items={items}
         title={shouldShowTitle ? title : ''}
         ariaLabel={ariaLabel}
         offsetRight={offsetRight}
@@ -138,4 +140,21 @@ function checkSafeUrlRecursively(itemOrGroup: MenuDropdownProps['items']) {
       checkSafeUrlRecursively(item.items);
     }
   }
+}
+
+function excludeCheckboxes(items: MenuDropdownProps['items']): MenuDropdownProps['items'] {
+  return items
+    .map(item => {
+      if (item.itemType === 'checkbox') {
+        return null;
+      }
+      if ('items' in item) {
+        return {
+          ...item,
+          items: excludeCheckboxes(item.items),
+        };
+      }
+      return item;
+    })
+    .filter(item => item !== null) as MenuDropdownProps['items'];
 }

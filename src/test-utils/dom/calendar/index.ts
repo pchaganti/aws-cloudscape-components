@@ -1,8 +1,16 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import { ComponentWrapper, ElementWrapper } from '@cloudscape-design/test-utils-core/dom';
-import styles from '../../../calendar/styles.selectors.js';
+import { ComponentWrapper, createWrapper, ElementWrapper } from '@cloudscape-design/test-utils-core/dom';
+
 import ButtonWrapper from '../button';
+
+import styles from '../../../calendar/styles.selectors.js';
+
+export class CalendarDateWrapper extends ComponentWrapper {
+  findDisabledReason(): ElementWrapper | null {
+    return createWrapper().find(`.${styles['disabled-reason-tooltip']}`);
+  }
+}
 
 export default class CalendarWrapper extends ComponentWrapper {
   static rootSelector: string = styles.root;
@@ -12,8 +20,11 @@ export default class CalendarWrapper extends ComponentWrapper {
    * @param row 1-based row index of the day or month.
    * @param column 1-based column index of the day or month.
    */
-  findDateAt(row: number, column: number): ElementWrapper {
-    return this.find(`.${styles['calendar-row']}:nth-child(${row}) .${styles['calendar-date']}:nth-child(${column})`)!;
+  findDateAt(row: number, column: number): CalendarDateWrapper {
+    return this.findComponent(
+      `.${styles['calendar-row']}:nth-child(${row}) .${styles['calendar-date']}:nth-child(${column})`,
+      CalendarDateWrapper
+    )!;
   }
 
   findHeader(): ElementWrapper {

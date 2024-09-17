@@ -1,11 +1,14 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import styles from './styles.css.js';
-import clsx from 'clsx';
 import React from 'react';
+import clsx from 'clsx';
+
 import { IconProps } from '../../../icon/interfaces';
 import InternalIcon from '../../../icon/internal';
 import HighlightMatch from './highlight-match';
+
+import analyticsSelectors from './analytics-metadata/styles.css.js';
+import styles from './styles.css.js';
 
 interface LabelProps {
   label?: string;
@@ -14,7 +17,7 @@ interface LabelProps {
   triggerVariant: boolean;
 }
 export const Label = ({ label, prefix, highlightText, triggerVariant }: LabelProps) => (
-  <span className={clsx(styles.label, triggerVariant && styles['trigger-variant'])}>
+  <span className={clsx(styles.label, analyticsSelectors.label, triggerVariant && styles['trigger-variant'])}>
     {prefix && (
       <span className={clsx(styles['label-prefix'], triggerVariant && styles['trigger-variant'])}>{prefix} </span>
     )}

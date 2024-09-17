@@ -1,14 +1,15 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React, { useMemo } from 'react';
+import clsx from 'clsx';
 import { arc, PieArcDatum } from 'd3-shape';
 
-import { PieChartProps } from './interfaces';
-import { Dimension } from './utils';
-import { InternalChartDatum } from './pie-chart';
-import styles from './styles.css.js';
-import clsx from 'clsx';
 import { useInternalI18n } from '../i18n/context';
+import { PieChartProps } from './interfaces';
+import { InternalChartDatum } from './pie-chart';
+import { Dimension } from './utils';
+
+import styles from './styles.css.js';
 
 interface SegmentsProps<T> {
   pieData: Array<PieArcDatum<InternalChartDatum<T>>>;
@@ -20,6 +21,7 @@ interface SegmentsProps<T> {
   segmentAriaRoleDescription?: string;
   onMouseDown: (datum: InternalChartDatum<T>) => void;
   onMouseOver: (datum: InternalChartDatum<T>) => void;
+  onTouchStart: () => void;
 }
 
 export default function Segments<T extends PieChartProps.Datum>({
@@ -32,6 +34,7 @@ export default function Segments<T extends PieChartProps.Datum>({
   segmentAriaRoleDescription,
   onMouseDown,
   onMouseOver,
+  onTouchStart,
 }: SegmentsProps<T>) {
   const i18n = useInternalI18n('pie-chart');
 
@@ -75,6 +78,7 @@ export default function Segments<T extends PieChartProps.Datum>({
         return (
           <g
             key={datum.data.index}
+            onTouchStart={() => onTouchStart()}
             onMouseDown={e => {
               onMouseDown(datum.data);
               e.preventDefault();

@@ -1,9 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import { useLayoutEffect, RefObject, useCallback } from 'react';
-import stickyScrolling, { calculateScrollingOffset, scrollUpBy } from './sticky-scrolling';
-import { useMobile } from '../internal/hooks/use-mobile';
+import { RefObject, useCallback, useLayoutEffect } from 'react';
+
 import { useResizeObserver } from '@cloudscape-design/component-toolkit/internal';
+
+import { useMobile } from '../internal/hooks/use-mobile';
+import stickyScrolling, { calculateScrollingOffset, scrollUpBy } from './sticky-scrolling';
 
 export const useStickyHeader = (
   tableRef: RefObject<HTMLElement>,
@@ -22,12 +24,12 @@ export const useStickyHeader = (
       secondaryTableRef.current &&
       tableWrapperRef.current
     ) {
-      // Using the tableRef offsetWidth instead of the theadRef because in VR
+      // Using the tableRef getBoundingClientRect().width instead of the theadRef because in VR
       // the tableRef adds extra padding to the table and by default the theadRef will have a width
       // without the padding and will make the sticky header width incorrect.
-      secondaryTableRef.current.style.inlineSize = `${tableRef.current.offsetWidth}px`;
+      secondaryTableRef.current.style.inlineSize = `${tableRef.current.getBoundingClientRect().width}px`;
 
-      tableWrapperRef.current.style.marginBlockStart = `-${theadRef.current.offsetHeight}px`;
+      tableWrapperRef.current.style.marginBlockStart = `-${theadRef.current.getBoundingClientRect().height}px`;
     }
   }, [theadRef, secondaryTheadRef, secondaryTableRef, tableWrapperRef, tableRef]);
   useLayoutEffect(() => {

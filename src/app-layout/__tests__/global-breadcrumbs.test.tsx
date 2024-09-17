@@ -1,5 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+/* eslint simple-import-sort/imports: 0 */
 import React, { useState } from 'react';
 import { act, render, cleanup, waitFor } from '@testing-library/react';
 import { describeEachAppLayout } from './utils';
@@ -7,6 +8,8 @@ import createWrapper, { BreadcrumbGroupWrapper } from '../../../lib/components/t
 import AppLayout from '../../../lib/components/app-layout';
 import BreadcrumbGroup, { BreadcrumbGroupProps } from '../../../lib/components/breadcrumb-group';
 import { awsuiPluginsInternal } from '../../../lib/components/internal/plugins/api';
+import { activateAnalyticsMetadata } from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+import { getGeneratedAnalyticsMetadata } from '@cloudscape-design/component-toolkit/internal/analytics-metadata/utils';
 
 const wrapper = createWrapper();
 
@@ -14,6 +17,13 @@ const defaultBreadcrumbs: Array<BreadcrumbGroupProps.Item> = [
   { text: 'Home', href: '/home' },
   { text: 'Page', href: '/home/page' },
 ];
+
+const defaultAppLayoutProps = {
+  // Suppress warning in runtime drawers API
+  __disableRuntimeDrawers: true,
+  // Suppress warning about duplicate tools which are rendered by default
+  toolsHide: true,
+};
 
 function findAllBreadcrumbsInstances() {
   return wrapper.findAllByClassName(BreadcrumbGroupWrapper.rootSelector);
@@ -27,10 +37,17 @@ function findRootBreadcrumb() {
   return wrapper.findAppLayout()!.findBreadcrumbs()!.findBreadcrumbGroup()!.findBreadcrumbLink(1)!;
 }
 
-function renderAsync(jsx: React.ReactElement) {
-  render(jsx);
+function delay() {
   // longer than a setTimeout(..., 0) used inside the implementation
   return act(() => new Promise(resolve => setTimeout(resolve, 10)));
+}
+
+async function renderAsync(jsx: React.ReactElement) {
+  render(jsx);
+  await waitFor(() => {
+    expect(wrapper.findAppLayout()!.find('[data-awsui-discovered-breadcrumbs="true"]')).toBeTruthy();
+    expect(findAllBreadcrumbsInstances()).toHaveLength(1);
+  });
 }
 
 afterEach(() => {
@@ -46,14 +63,14 @@ afterEach(() => {
 
 describeEachAppLayout({ themes: ['refresh-toolbar'], sizes: ['desktop'] }, () => {
   test('renders normal breadcrumbs when no app layout is present', async () => {
-    await renderAsync(<BreadcrumbGroup items={defaultBreadcrumbs} />);
+    render(<BreadcrumbGroup items={defaultBreadcrumbs} />);
+    await delay();
     expect(findAllBreadcrumbsInstances()).toHaveLength(1);
     expect(wrapper.findBreadcrumbGroup()!.findBreadcrumbLinks()).toHaveLength(2);
   });
 
   test('renders breadcrumbs inside app layout breadcrumbs slot', async () => {
     await renderAsync(<AppLayout breadcrumbs={<BreadcrumbGroup items={defaultBreadcrumbs} />} />);
-    expect(findAllBreadcrumbsInstances()).toHaveLength(1);
     expect(findAppLayoutBreadcrumbItems()).toHaveLength(2);
   });
 
@@ -71,13 +88,11 @@ describeEachAppLayout({ themes: ['refresh-toolbar'], sizes: ['desktop'] }, () =>
         <BreadcrumbGroup items={defaultBreadcrumbs} />
       </>
     );
-    expect(findAllBreadcrumbsInstances()).toHaveLength(1);
     expect(findAppLayoutBreadcrumbItems()).toHaveLength(2);
   });
 
   test('renders breadcrumbs inside app layout content slot', async () => {
     await renderAsync(<AppLayout content={<BreadcrumbGroup items={defaultBreadcrumbs} />} />);
-    expect(findAllBreadcrumbsInstances()).toHaveLength(1);
     expect(findAppLayoutBreadcrumbItems()).toHaveLength(2);
   });
 
@@ -100,7 +115,6 @@ describeEachAppLayout({ themes: ['refresh-toolbar'], sizes: ['desktop'] }, () =>
         content={<BreadcrumbGroup items={[{ text: 'Second', href: '/second' }]} />}
       />
     );
-    expect(findAllBreadcrumbsInstances()).toHaveLength(1);
     expect(findAppLayoutBreadcrumbItems()).toHaveLength(1);
     expect(findRootBreadcrumb().getElement()).toHaveTextContent('Second');
   });
@@ -116,7 +130,6 @@ describeEachAppLayout({ themes: ['refresh-toolbar'], sizes: ['desktop'] }, () =>
         }
       />
     );
-    expect(findAllBreadcrumbsInstances()).toHaveLength(1);
     expect(findAppLayoutBreadcrumbItems()).toHaveLength(1);
     expect(findRootBreadcrumb().getElement()).toHaveTextContent('Second');
   });
@@ -124,11 +137,43 @@ describeEachAppLayout({ themes: ['refresh-toolbar'], sizes: ['desktop'] }, () =>
   test('when multiple app layouts rendered, only the first instance receives breadcrumbs', async () => {
     await renderAsync(
       <>
-        <AppLayout data-testid="first" />
-        <AppLayout data-testid="second" content={<BreadcrumbGroup items={defaultBreadcrumbs} />} />
+        <AppLayout {...defaultAppLayoutProps} data-testid="first" />
+        <AppLayout
+          {...defaultAppLayoutProps}
+          data-testid="second"
+          navigationHide={true}
+          content={<BreadcrumbGroup items={defaultBreadcrumbs} />}
+        />
       </>
     );
-    expect(findAllBreadcrumbsInstances()).toHaveLength(1);
+    expect(
+      wrapper
+        .find('[data-testid="first"]')!
+        .findAppLayout()!
+        .findBreadcrumbs()!
+        .findBreadcrumbGroup()!
+        .findBreadcrumbLinks()
+    ).toHaveLength(2);
+    expect(wrapper.find('[data-testid="second"]')!.findAppLayout()!.findBreadcrumbs()).toBeFalsy();
+  });
+
+  test('when multiple nested app layouts rendered, the outer instance receives breadcrumbs', async () => {
+    await renderAsync(
+      <>
+        <AppLayout
+          {...defaultAppLayoutProps}
+          data-testid="first"
+          content={
+            <AppLayout
+              {...defaultAppLayoutProps}
+              data-testid="second"
+              navigationHide={true}
+              breadcrumbs={<BreadcrumbGroup items={defaultBreadcrumbs} />}
+            />
+          }
+        />
+      </>
+    );
     expect(
       wrapper
         .find('[data-testid="first"]')!
@@ -153,7 +198,6 @@ describeEachAppLayout({ themes: ['refresh-toolbar'], sizes: ['desktop'] }, () =>
       );
     }
     await renderAsync(<AppLayout content={<DynamicBreadcrumb />} />);
-    expect(findAllBreadcrumbsInstances()).toHaveLength(1);
     expect(findRootBreadcrumb().getElement()).toHaveTextContent('Original');
 
     wrapper.find('[data-testid="change-button"]')!.click();
@@ -190,7 +234,6 @@ describeEachAppLayout({ themes: ['refresh-toolbar'], sizes: ['desktop'] }, () =>
         }
       />
     );
-    expect(findAllBreadcrumbsInstances()).toHaveLength(1);
     expect(findRootBreadcrumb().getElement()).toHaveTextContent('Static');
 
     wrapper.find('[data-testid="render-toggle"]')!.click();
@@ -209,9 +252,35 @@ describeEachAppLayout({ themes: ['refresh-toolbar'], sizes: ['desktop'] }, () =>
 
 describe('without feature flag', () => {
   test('breadcrumbs are not globalized', async () => {
-    await renderAsync(<AppLayout content={<BreadcrumbGroup items={defaultBreadcrumbs} />} />);
+    render(<AppLayout content={<BreadcrumbGroup items={defaultBreadcrumbs} />} />);
+    await delay();
     expect(findAllBreadcrumbsInstances()).toHaveLength(1);
     expect(wrapper.findAppLayout()!.findBreadcrumbs()).toBeFalsy();
     expect(wrapper.findAppLayout()!.findContentRegion().findBreadcrumbGroup()).toBeTruthy();
+  });
+});
+
+test('renders analytics metadata information', async () => {
+  activateAnalyticsMetadata(true);
+  render(<AppLayout content={<BreadcrumbGroup items={defaultBreadcrumbs} ariaLabel="global breadcrumbs" />} />);
+  await delay();
+  const breadcrumbsWrapper = wrapper.findAppLayout()!.findContentRegion().findBreadcrumbGroup()!;
+  const firstBreadcrumb = breadcrumbsWrapper.findBreadcrumbLink(1)!.getElement();
+  expect(getGeneratedAnalyticsMetadata(firstBreadcrumb)).toEqual({
+    action: 'click',
+    detail: {
+      position: '1',
+      label: 'Home',
+      href: '/home',
+    },
+    contexts: [
+      {
+        type: 'component',
+        detail: {
+          name: 'awsui.BreadcrumbGroup',
+          label: 'global breadcrumbs',
+        },
+      },
+    ],
   });
 });

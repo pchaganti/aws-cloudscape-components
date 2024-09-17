@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
 import MockDate from 'mockdate';
+
+import { Box, DatePicker, DatePickerProps, SpaceBetween } from '~components';
+
 import createPermutations from '../utils/permutations';
 import PermutationsView from '../utils/permutations-view';
 import ScreenshotArea from '../utils/screenshot-area';
-import { Box, SpaceBetween, DatePicker, DatePickerProps } from '~components';
 import i18nStrings from './i18n-strings';
 
 // Mock the date in order to have the current day styling in place for screenshot testing.
@@ -45,7 +47,8 @@ export default function DatePickerScenario() {
               locale="en-GB"
               i18nStrings={i18nStrings}
               placeholder={'YYYY/MM/DD'}
-              isDateEnabled={date => date.getDay() !== 0}
+              isDateEnabled={date => date.getDay() !== 0 && date.getDay() !== 6}
+              dateDisabledReason={date => (date.getDay() === 6 ? 'Saturday' : '')}
               openCalendarAriaLabel={openCalendarAriaLabel}
             />
           </div>

@@ -1,14 +1,17 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React, { useState } from 'react';
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+
+import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
 
 import ButtonDropdown, { ButtonDropdownProps } from '../../../lib/components/button-dropdown';
-import createWrapper, { ButtonWrapper, IconWrapper } from '../../../lib/components/test-utils/dom';
-import liveRegionStyles from '../../../lib/components/internal/components/live-region/styles.css.js';
-import iconStyles from '../../../lib/components/icon/styles.css.js';
+import InternalButtonDropdown from '../../../lib/components/button-dropdown/internal';
 import { KeyCode } from '../../../lib/components/internal/keycode';
-import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
+import createWrapper, { ButtonWrapper, IconWrapper } from '../../../lib/components/test-utils/dom';
+
+import iconStyles from '../../../lib/components/icon/styles.css.js';
+import liveRegionStyles from '../../../lib/components/internal/components/live-region/styles.css.js';
 
 jest.mock('@cloudscape-design/component-toolkit/internal', () => ({
   ...jest.requireActual('@cloudscape-design/component-toolkit/internal'),
@@ -103,6 +106,63 @@ const items: ButtonDropdownProps.Items = [
       });
     });
 
+    (['normal', 'primary'] as Array<ButtonDropdownProps['variant']>).forEach(variant => {
+      describe(`"${variant}" variant 'disabled with reason`, () => {
+        const props = { expandToViewport, variant };
+
+        // disabledReason behavior is already tested for button component, which acts as the trigger for this component
+        // here we need to check the basic logic without diving deep into details
+        test('open tooltip on mouseenter', () => {
+          const wrapper = renderButtonDropdown({
+            ...props,
+            items,
+            disabled: true,
+            disabledReason: 'disabled reason',
+          });
+
+          fireEvent.mouseEnter(wrapper.findTriggerButton()!.getElement());
+
+          expect(wrapper.findTriggerButton()!.findDisabledReason()).not.toBeNull();
+          expect(wrapper.findTriggerButton()!.findDisabledReason()!.getElement()).toHaveTextContent('reason');
+        });
+
+        test('close tooltip on mouseleave', () => {
+          const wrapper = renderButtonDropdown({
+            ...props,
+            items,
+            disabled: true,
+            disabledReason: 'disabled reason',
+          });
+
+          fireEvent.mouseEnter(wrapper.findTriggerButton()!.getElement());
+
+          expect(wrapper.findTriggerButton()!.findDisabledReason()).not.toBeNull();
+          expect(wrapper.findTriggerButton()!.findDisabledReason()!.getElement()).toHaveTextContent('reason');
+
+          fireEvent.mouseLeave(wrapper.findTriggerButton()!.getElement());
+
+          expect(wrapper.findTriggerButton()!.findDisabledReason()).toBeNull();
+        });
+      });
+    });
+
+    describe(`"icon" variant 'disabled with reason`, () => {
+      const props = { expandToViewport, variant: 'icon' as ButtonDropdownProps['variant'] };
+
+      test('does not open tooltip on mouseenter', () => {
+        const wrapper = renderButtonDropdown({
+          ...props,
+          items,
+          disabled: true,
+          disabledReason: 'disabled reason',
+        });
+
+        fireEvent.mouseEnter(wrapper.findTriggerButton()!.getElement());
+
+        expect(wrapper.findTriggerButton()!.findDisabledReason()).toBeNull();
+      });
+    });
+
     describe('"icon" variant', () => {
       it('renders one icon inside the button trigger', () => {
         const wrapper = renderButtonDropdown({ expandToViewport, items, variant: 'icon' });
@@ -173,6 +233,20 @@ describe('with main action', () => {
     expect(wrapper.findItems()).toHaveLength(1);
   });
 
+  test('renders main action only', () => {
+    const onClick = jest.fn();
+    const renderResult = render(
+      <InternalButtonDropdown items={[]} mainAction={{ text: 'Main action', onClick }} showMainActionOnly={true} />
+    );
+    const wrapper = createWrapper(renderResult.container).findButtonDropdown()!;
+
+    expect(wrapper.findTriggerButton()).toBe(null);
+    expect(wrapper.findMainAction()).not.toBe(null);
+
+    wrapper.findMainAction()!.click();
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
   test('main action onClick is triggered', () => {
     const onClick = jest.fn();
     const onFollow = jest.fn();
@@ -197,20 +271,34 @@ describe('with main action', () => {
     expect(onFollow).toHaveBeenCalledTimes(1);
   });
 
-  test('main action with external link has an icon and dedicated ARIA label', () => {
+  test('main action assigns ARIA label', () => {
     const wrapper = renderSplitButtonDropdown({
       mainAction: {
         text: 'Main',
-        href: 'https://external.com',
-        external: true,
-        externalIconAriaLabel: '(opens in a new tab)',
+        ariaLabel: 'Main #1',
       },
     });
 
-    expect(wrapper.findMainAction()?.findByClassName(iconStyles.icon)).not.toBe(null);
     expect(wrapper.findMainAction()!.getElement()).toHaveTextContent('Main');
-    expect(wrapper.findMainAction()!.getElement()).toHaveAccessibleName('Main (opens in a new tab)');
+    expect(wrapper.findMainAction()!.getElement()).toHaveAccessibleName('Main #1');
   });
+
+  test.each([undefined, 'Main #1'])(
+    'main action with external link has an icon and dedicated ARIA label, ariaLabel=%s',
+    ariaLabel => {
+      const text = 'Main';
+      const externalIconAriaLabel = '(opens in a new tab)';
+      const wrapper = renderSplitButtonDropdown({
+        mainAction: { text, ariaLabel, href: 'https://external.com', external: true, externalIconAriaLabel },
+      });
+
+      expect(wrapper.findMainAction()?.findByClassName(iconStyles.icon)).not.toBe(null);
+      expect(wrapper.findMainAction()!.getElement()).toHaveTextContent('Main');
+      expect(wrapper.findMainAction()!.getElement()).toHaveAccessibleName(
+        `${ariaLabel ?? text} ${externalIconAriaLabel}`
+      );
+    }
+  );
 
   test('main action can be set as disabled', () => {
     const wrapper = renderSplitButtonDropdown({
@@ -219,6 +307,36 @@ describe('with main action', () => {
 
     const mainAction = new ButtonWrapper(wrapper.findMainAction()!.getElement());
     expect(mainAction.isDisabled()).toBe(true);
+  });
+
+  describe('disabled with reason', () => {
+    // disabledReason behavior is already tested for button component, which acts as the trigger for this component
+    // here we need to check the basic logic without diving deep into details
+    test('open tooltip on mouseenter', () => {
+      const wrapper = renderSplitButtonDropdown({
+        mainAction: { text: 'Main', disabled: true, disabledReason: 'disabled reason' },
+      });
+
+      fireEvent.mouseEnter(wrapper.findMainAction()!.getElement());
+
+      expect(wrapper.findMainAction()!.findDisabledReason()).not.toBeNull();
+      expect(wrapper.findMainAction()!.findDisabledReason()!.getElement()).toHaveTextContent('reason');
+    });
+
+    test('close tooltip on mouseleave', () => {
+      const wrapper = renderSplitButtonDropdown({
+        mainAction: { text: 'Main', disabled: true, disabledReason: 'disabled reason' },
+      });
+
+      fireEvent.mouseEnter(wrapper.findMainAction()!.getElement());
+
+      expect(wrapper.findMainAction()!.findDisabledReason()).not.toBeNull();
+      expect(wrapper.findMainAction()!.findDisabledReason()!.getElement()).toHaveTextContent('reason');
+
+      fireEvent.mouseLeave(wrapper.findMainAction()!.getElement());
+
+      expect(wrapper.findMainAction()!.findDisabledReason()).toBeNull();
+    });
   });
 
   test('main action can be set as loading', () => {

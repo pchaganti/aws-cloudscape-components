@@ -1,9 +1,12 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
-import { DATA_ATTR_FUNNEL_KEY, FUNNEL_KEY_FUNNEL_NAME } from '../../internal/analytics/selectors';
-import styles from './styles.css.js';
 import clsx from 'clsx';
+
+import { DATA_ATTR_FUNNEL_KEY, FUNNEL_KEY_FUNNEL_NAME } from '../../internal/analytics/selectors';
+
+import analyticsSelectors from '../analytics-metadata/styles.css.js';
+import styles from './styles.css.js';
 
 interface FunnelBreadcrumbItemProps {
   text: string;
@@ -19,7 +22,11 @@ export const FunnelBreadcrumbItem = React.forwardRef<HTMLSpanElement, FunnelBrea
     }
 
     return (
-      <span {...funnelAttributes} className={clsx(styles.text, hidden && styles['text-hidden'])} ref={ref}>
+      <span
+        {...funnelAttributes}
+        className={clsx(styles.text, hidden && styles['text-hidden'], analyticsSelectors['breadcrumb-item'])}
+        ref={ref}
+      >
         {text}
       </span>
     );

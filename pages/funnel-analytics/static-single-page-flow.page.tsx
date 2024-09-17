@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React, { useState } from 'react';
+
 import {
   Box,
   BreadcrumbGroup,
@@ -17,14 +18,12 @@ import {
   S3ResourceSelectorProps,
   SpaceBetween,
 } from '~components';
-
-import { fetchBuckets, fetchObjects, fetchVersions } from '../s3-resource-selector/data/request';
-import { i18nStrings } from '../s3-resource-selector/data/i18n-strings';
-import { SelfDismissibleAlert, uriToConsoleUrl } from '../s3-resource-selector/shared';
-
 import { setFunnelMetrics } from '~components/internal/analytics';
+
+import { i18nStrings } from '../s3-resource-selector/data/i18n-strings';
+import { fetchBuckets, fetchObjects, fetchVersions } from '../s3-resource-selector/data/request';
+import { SelfDismissibleAlert, uriToConsoleUrl } from '../s3-resource-selector/shared';
 import { MockedFunnelMetrics } from './mock-funnel';
-import { getAnalyticsProps } from './metadata';
 
 setFunnelMetrics(MockedFunnelMetrics);
 
@@ -84,11 +83,10 @@ export default function StaticSinglePageCreatePage() {
       />
       {mounted && (
         <Form
-          {...getAnalyticsProps({
+          analyticsMetadata={{
             instanceIdentifier: 'single-page-demo',
             flowType: 'create',
-            ...(errorText ? { errorContext: 'errors.validation' } : {}),
-          })}
+          }}
           errorText={errorText}
           actions={
             <SpaceBetween size="xs" direction="horizontal">
@@ -135,10 +133,9 @@ export default function StaticSinglePageCreatePage() {
                   Container 1 - header
                 </Header>
               }
-              {...getAnalyticsProps({
+              analyticsMetadata={{
                 instanceIdentifier: 'container-1',
-                errorContext: value === 'error' ? 'errors.fields' : undefined,
-              })}
+              }}
             >
               <SpaceBetween size="s">
                 <FormField
@@ -149,10 +146,6 @@ export default function StaticSinglePageCreatePage() {
                   }
                   errorText={value === 'error' ? 'Trigger error' : ''}
                   label="This is an ordinary text field"
-                  {...getAnalyticsProps({
-                    instanceIdentifier: 'field1',
-                    errorContext: value === 'error' ? 'errors.triggered' : undefined,
-                  })}
                 >
                   <Input
                     data-testid="field1"
@@ -170,9 +163,9 @@ export default function StaticSinglePageCreatePage() {
                   Container 2 - header
                 </Header>
               }
-              {...getAnalyticsProps({
+              analyticsMetadata={{
                 instanceIdentifier: 'container-2',
-              })}
+              }}
             >
               <FormField
                 info={

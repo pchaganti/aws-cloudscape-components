@@ -1,8 +1,13 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React, { forwardRef, Ref } from 'react';
-import styles from './styles.css.js';
+
+import { getAnalyticsMetadataAttribute } from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+
 import InternalIcon from '../icon/internal';
+import { GeneratedAnalyticsMetadataTokenGroupDismiss } from './analytics-metadata/interfaces';
+
+import styles from './styles.css.js';
 
 interface DismissButtonProps {
   disabled?: boolean;
@@ -17,6 +22,12 @@ function DismissButton(
   { disabled, dismissLabel, onDismiss, readOnly }: DismissButtonProps,
   ref: Ref<HTMLButtonElement>
 ) {
+  const analyticsMetadata: GeneratedAnalyticsMetadataTokenGroupDismiss = {
+    action: 'dismiss',
+    detail: {
+      label: { root: 'self' },
+    },
+  };
   return (
     <button
       ref={ref}
@@ -31,6 +42,7 @@ function DismissButton(
         onDismiss();
       }}
       aria-label={dismissLabel}
+      {...(disabled || readOnly ? {} : getAnalyticsMetadataAttribute(analyticsMetadata))}
     >
       <InternalIcon name="close" />
     </button>

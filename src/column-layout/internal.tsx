@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
 import clsx from 'clsx';
+
 import { getBaseProps } from '../internal/base-component';
-import { InternalColumnLayoutProps } from './interfaces';
 import FlexibleColumnLayout from './flexible-column-layout';
 import GridColumnLayout from './grid-column-layout';
+import { InternalColumnLayoutProps } from './interfaces';
+
 import styles from './styles.css.js';
 
 export const COLUMN_TRIGGERS = ['default', 'xxs', 'xs'] as const;
@@ -21,6 +23,7 @@ export default function ColumnLayout({
   disableGutters = false,
   minColumnWidth,
   children,
+  __tagOverride,
   __breakpoint,
   __internalRootRef,
   ...restProps
@@ -36,6 +39,7 @@ export default function ColumnLayout({
           variant={variant}
           minColumnWidth={minColumnWidth}
           disableGutters={disableGutters}
+          __tagOverride={__tagOverride}
         >
           {children}
         </FlexibleColumnLayout>
@@ -46,6 +50,7 @@ export default function ColumnLayout({
           borders={borders}
           disableGutters={disableGutters}
           __breakpoint={__breakpoint}
+          __tagOverride={__tagOverride}
         >
           {children}
         </GridColumnLayout>

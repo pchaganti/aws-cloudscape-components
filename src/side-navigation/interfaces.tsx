@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
+
 import { BaseComponentProps } from '../internal/base-component';
 import { BaseNavigationDetail, CancelableEventHandler, NonCancelableEventHandler } from '../internal/events';
 
@@ -14,6 +15,11 @@ export interface SideNavigationProps extends BaseComponentProps {
    * - `logo` (object) - Specifies a logo image.
    */
   header?: SideNavigationProps.Header;
+
+  /**
+   * A slot located below the header and above the items.
+   **/
+  itemsControl?: React.ReactNode;
 
   /**
    * Specifies the `href` of the currently active link.

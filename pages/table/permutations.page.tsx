@@ -2,11 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
 import range from 'lodash/range';
+
+import FormField from '~components/form-field';
+import Header from '~components/header';
+import Input from '~components/input';
 import Link from '~components/link';
 import PropertyFilter from '~components/property-filter';
-import Header from '~components/header';
 import Table, { TableProps } from '~components/table';
-import { i18nStrings } from '../property-filter/common-props';
+
+import {
+  i18nStrings as propertyFilterI18nStrings,
+  labels as propertyFilterLabels,
+} from '../property-filter/common-props';
 import createPermutations from '../utils/permutations';
 import PermutationsView from '../utils/permutations-view';
 import ScreenshotArea from '../utils/screenshot-area';
@@ -53,6 +60,31 @@ const PROPERTY_COLUMNS: TableProps.ColumnDefinition<any>[] = [
     id: 'value',
     header: 'Value',
     cell: item => item.value,
+  },
+];
+
+const VERTICAL_ALIGN_COLUMNS: TableProps.ColumnDefinition<any>[] = [
+  {
+    id: 'variable',
+    header: 'Property',
+    cell: item => <Input ariaLabel="vertical align input" readOnly={true} value={item.number} />,
+    verticalAlign: 'top',
+  },
+  {
+    id: 'type',
+    header: 'Type',
+    cell: item => (
+      <FormField errorText={`${item.text} error text`} i18nStrings={{ errorIconAriaLabel: 'Error' }}>
+        <Input ariaLabel="vertical align error input" readOnly={true} value={item.text} />
+      </FormField>
+    ),
+    verticalAlign: 'top',
+  },
+  {
+    id: 'type-2',
+    header: 'Value',
+    cell: item => item.text,
+    verticalAlign: 'top',
   },
 ];
 
@@ -238,7 +270,8 @@ const permutations = createPermutations<TableProps>([
             groupValuesLabel: 'Number values',
           },
         ]}
-        i18nStrings={i18nStrings}
+        {...propertyFilterLabels}
+        i18nStrings={propertyFilterI18nStrings}
         query={{
           operation: 'or',
           tokens: [
@@ -279,6 +312,45 @@ const permutations = createPermutations<TableProps>([
     ],
     preferences: ['preferences'],
     items: [createSimpleItems(3)],
+  },
+  {
+    columnDefinitions: [VERTICAL_ALIGN_COLUMNS],
+    items: [createSimpleItems(3)],
+    variant: [undefined, 'full-page'],
+  },
+  {
+    columnDefinitions: [
+      [
+        {
+          id: 'variable',
+          header: 'Property',
+          cell: item => <Link href="#">{item.name}</Link>,
+          isRowHeader: true,
+          width: 150,
+        },
+        {
+          id: 'type',
+          header: 'Type',
+          cell: item => item.type,
+          width: 150,
+        },
+        {
+          id: 'value',
+          header: 'Value',
+          cell: item => item.value,
+        },
+      ],
+    ],
+    items: [
+      [
+        {
+          name: 'Color',
+          value: '#000000',
+          type: 'String',
+        },
+      ],
+    ],
+    stickyHeader: [true],
   },
 ]);
 /* eslint-enable react/jsx-key */

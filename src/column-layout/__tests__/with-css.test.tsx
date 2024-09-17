@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
 import { render } from '@testing-library/react';
+
 import ColumnLayout, { ColumnLayoutProps } from '../../../lib/components/column-layout';
 import createWrapper from '../../../lib/components/test-utils/dom';
+
 import styles from '../../../lib/components/column-layout/flexible-column-layout/styles.css.js';
 
 jest.mock('@cloudscape-design/component-toolkit', () => ({
@@ -36,7 +38,7 @@ describe('ColumnLayout (with CSS grid) component', () => {
     });
 
     expect(wrapper.getElement().childElementCount).toBe(4);
-    expect(getGridColumns()).toBe('repeat(2, 1fr)');
+    expect(getGridColumns()).toBe('repeat(2, minmax(0, 1fr))');
   });
 
   it('wraps columns if necessary', () => {
@@ -55,6 +57,6 @@ describe('ColumnLayout (with CSS grid) component', () => {
       ),
     });
 
-    expect(getGridColumns()).toBe('repeat(4, 1fr)');
+    expect(getGridColumns()).toBe('repeat(4, minmax(0, 1fr))');
   });
 });

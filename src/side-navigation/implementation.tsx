@@ -1,21 +1,25 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import React, { useMemo, useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import clsx from 'clsx';
+
+import { useAppLayoutToolbarEnabled } from '../app-layout/utils/feature-flags';
 import { getBaseProps } from '../internal/base-component';
-import { fireNonCancelableEvent, fireCancelableEvent } from '../internal/events';
-import { SideNavigationProps } from './interfaces';
-import { Header, NavigationItemsList } from './parts';
-import { generateExpandableItemsMapping, checkDuplicateHrefs } from './util';
-import styles from './styles.css.js';
+import { fireCancelableEvent, fireNonCancelableEvent } from '../internal/events';
+import { InternalBaseComponentProps } from '../internal/hooks/use-base-component';
 import { isDevelopment } from '../internal/is-development';
 import { createWidgetizedComponent } from '../internal/widgets';
-import { InternalBaseComponentProps } from '../internal/hooks/use-base-component';
+import { SideNavigationProps } from './interfaces';
+import { Header, NavigationItemsList } from './parts';
+import { checkDuplicateHrefs, generateExpandableItemsMapping } from './util';
+
+import styles from './styles.css.js';
 
 export type SideNavigationInternalProps = SideNavigationProps & InternalBaseComponentProps;
 
 export function SideNavigationImplementation({
   header,
+  itemsControl,
   activeHref,
   items = [],
   onFollow,
@@ -24,6 +28,7 @@ export function SideNavigationImplementation({
   ...props
 }: SideNavigationInternalProps) {
   const baseProps = getBaseProps(props);
+  const isToolbar = useAppLayoutToolbarEnabled();
   const parentMap = useMemo(() => generateExpandableItemsMapping(items), [items]);
 
   if (isDevelopment) {
@@ -56,10 +61,15 @@ export function SideNavigationImplementation({
   );
 
   return (
-    <div {...baseProps} className={clsx(styles.root, baseProps.className)} ref={__internalRootRef}>
+    <div
+      {...baseProps}
+      className={clsx(styles.root, baseProps.className, isToolbar && styles['with-toolbar'])}
+      ref={__internalRootRef}
+    >
       {header && (
         <Header definition={header} activeHref={activeHref} fireChange={onChangeHandler} fireFollow={onFollowHandler} />
       )}
+      {itemsControl && <div className={styles['items-control']}>{itemsControl}</div>}
       {items && (
         <div className={styles['list-container']}>
           <NavigationItemsList

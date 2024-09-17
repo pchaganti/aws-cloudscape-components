@@ -1,15 +1,17 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
+
 import { ButtonDropdown } from '~components';
+import FormField from '~components/form-field';
 import PropertyFilter, { PropertyFilterProps } from '~components/property-filter';
 import Select from '~components/select';
-import FormField from '~components/form-field';
-import ScreenshotArea from '../utils/screenshot-area';
-import { allItems, TableItem } from './table.data';
-import { columnDefinitions, i18nStrings, filteringProperties } from './common-props';
+
 import createPermutations from '../utils/permutations';
 import PermutationsView from '../utils/permutations-view';
+import ScreenshotArea from '../utils/screenshot-area';
+import { columnDefinitions, filteringProperties, i18nStrings, labels } from './common-props';
+import { allItems, TableItem } from './table.data';
 
 const filteringOptions: readonly PropertyFilterProps.FilteringOption[] = columnDefinitions.reduce<
   PropertyFilterProps.FilteringOption[]
@@ -139,6 +141,7 @@ export default function () {
           permutations={permutations}
           render={permutation => (
             <PropertyFilter
+              {...labels}
               countText={`5 matches`}
               i18nStrings={i18nStrings}
               query={{ tokens: [], operation: 'and' }}

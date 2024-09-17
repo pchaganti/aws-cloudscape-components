@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import React, { useRef } from 'react';
 import clsx from 'clsx';
-import handleKey from '../internal/utils/handle-key';
-import { KeyCode } from '../internal/keycode';
+
 import { fireNonCancelableEvent } from '../internal/events';
+import { KeyCode } from '../internal/keycode';
+import handleKey from '../internal/utils/handle-key';
 import { SegmentedControlProps } from './interfaces';
 import { Segment } from './segment';
+
 import styles from './styles.css.js';
 
 export default function InternalSegmentedControl({
@@ -21,7 +23,9 @@ export default function InternalSegmentedControl({
     return option.id === selectedId;
   });
   const currentSelectedOption = selectedOptions.length ? selectedOptions[0] : null;
-  const enabledSegments = (options || []).filter(option => !option.disabled);
+  const focusableSegments = (options || []).filter(
+    option => !option.disabled || (option.disabled && !!option.disabledReason)
+  );
 
   const moveHighlight = (event: React.KeyboardEvent<HTMLButtonElement>, activeIndex: number) => {
     if (event.keyCode !== KeyCode.right && event.keyCode !== KeyCode.left) {
@@ -31,11 +35,11 @@ export default function InternalSegmentedControl({
     let nextIndex = activeIndex;
 
     handleKey(event, {
-      onInlineStart: () => (nextIndex = activeIndex === 0 ? enabledSegments.length - 1 : activeIndex - 1),
-      onInlineEnd: () => (nextIndex = activeIndex + 1 === enabledSegments.length ? 0 : activeIndex + 1),
+      onInlineStart: () => (nextIndex = activeIndex === 0 ? focusableSegments.length - 1 : activeIndex - 1),
+      onInlineEnd: () => (nextIndex = activeIndex + 1 === focusableSegments.length ? 0 : activeIndex + 1),
     });
 
-    const nextSegmentId = enabledSegments[nextIndex].id;
+    const nextSegmentId = focusableSegments[nextIndex].id;
     segmentByIdRef.current[nextSegmentId]?.focus();
   };
 
@@ -49,9 +53,9 @@ export default function InternalSegmentedControl({
       {options &&
         options.map((option: SegmentedControlProps.Option, index) => {
           const isActive = selectedId === option.id;
-          const enabledSegmentIndex = enabledSegments.indexOf(option);
+          const focusableSegmentIndex = focusableSegments.indexOf(option);
           let tabIndex = isActive ? 0 : -1;
-          if (currentSelectedOption === null && enabledSegmentIndex === 0) {
+          if (currentSelectedOption === null && focusableSegmentIndex === 0) {
             tabIndex = 0;
           }
           return (
@@ -59,6 +63,7 @@ export default function InternalSegmentedControl({
               key={index}
               id={option.id}
               disabled={!!option.disabled}
+              disabledReason={option.disabledReason}
               iconName={option.iconName}
               iconAlt={option.iconAlt}
               iconUrl={option.iconUrl}
@@ -74,11 +79,15 @@ export default function InternalSegmentedControl({
                 }
               }}
               onClick={() => {
+                if (option.disabled) {
+                  return;
+                }
+
                 if (selectedId !== option.id) {
                   fireNonCancelableEvent(onChange, { selectedId: option.id });
                 }
               }}
-              onKeyDown={event => moveHighlight(event, enabledSegmentIndex)}
+              onKeyDown={event => moveHighlight(event, focusableSegmentIndex)}
             />
           );
         })}

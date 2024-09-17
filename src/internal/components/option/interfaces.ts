@@ -1,25 +1,27 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
+
 import { IconProps } from '../../../icon/interfaces';
 import { BaseComponentProps } from '../../base-component';
 
 export interface BaseOption {
-  label?: string;
-  disabled?: boolean;
-}
-
-export interface OptionDefinition extends BaseOption {
   value?: string;
+  label?: string;
   lang?: string;
-  labelTag?: string;
   description?: string;
+  disabled?: boolean;
+  disabledReason?: string;
+  labelTag?: string;
+  tags?: ReadonlyArray<string>;
+  filteringTags?: ReadonlyArray<string>;
   iconAlt?: string;
   iconName?: IconProps.Name;
   iconUrl?: string;
   iconSvg?: React.ReactNode;
-  tags?: ReadonlyArray<string>;
-  filteringTags?: ReadonlyArray<string>;
+}
+
+export interface OptionDefinition extends BaseOption {
   __labelPrefix?: string;
 }
 
@@ -34,6 +36,7 @@ export interface OptionGroup extends BaseOption {
 export interface DropdownOption {
   type?: string;
   disabled?: boolean;
+  disabledReason?: string;
   option: OptionDefinition | OptionGroup;
 }
 

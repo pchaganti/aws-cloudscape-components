@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as React from 'react';
 
-import ButtonDropdown, { ButtonDropdownProps } from '~components/button-dropdown';
 import { Box, SpaceBetween } from '~components';
+import ButtonDropdown, { ButtonDropdownProps } from '~components/button-dropdown';
+
 import createPermutations from '../utils/permutations';
-import ScreenshotArea from '../utils/screenshot-area';
 import PermutationsView from '../utils/permutations-view';
+import ScreenshotArea from '../utils/screenshot-area';
 
 const launchInstanceItem = {
   text: 'Launch instance',
@@ -31,6 +32,7 @@ const permutations = createPermutations<ButtonDropdownProps>([
       { ...launchInstanceItem },
       { ...launchInstanceItem, disabled: true },
       { ...launchInstanceItem, loading: true, loadingText: 'Loading' },
+      { iconName: 'add-plus', ariaLabel: 'Add resource' },
     ],
     items: [
       [
@@ -41,6 +43,7 @@ const permutations = createPermutations<ButtonDropdownProps>([
     disabled: [false, true],
     loading: [false, true],
     variant: ['primary', 'normal'],
+    children: ['Trigger', null],
   },
   {
     mainAction: [{ ...viewInstancesItem }, { ...viewInstancesItem, disabled: true }],

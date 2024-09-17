@@ -2,12 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import React from 'react';
-import { BaseComponentProps } from '../internal/base-component';
-import { NonCancelableEventHandler } from '../internal/events';
-import { DropdownStatusProps } from '../internal/components/dropdown-status';
-import { AutosuggestProps } from '../autosuggest/interfaces';
-import { ExpandToViewport } from '../internal/components/dropdown/interfaces';
-import { FormFieldControlProps } from '../internal/context/form-field-context';
+
 import {
   PropertyFilterFreeTextFiltering,
   PropertyFilterOperation,
@@ -18,8 +13,17 @@ import {
   PropertyFilterOperatorFormProps,
   PropertyFilterOption,
   PropertyFilterProperty,
+  PropertyFilterQuery,
   PropertyFilterToken,
+  PropertyFilterTokenGroup,
 } from '@cloudscape-design/collection-hooks';
+
+import { AutosuggestProps } from '../autosuggest/interfaces';
+import { BaseComponentProps } from '../internal/base-component';
+import { ExpandToViewport } from '../internal/components/dropdown/interfaces';
+import { DropdownStatusProps } from '../internal/components/dropdown-status';
+import { FormFieldControlProps } from '../internal/context/form-field-context';
+import { NonCancelableEventHandler } from '../internal/events';
 
 export interface PropertyFilterProps extends BaseComponentProps, ExpandToViewport, FormFieldControlProps {
   /**
@@ -145,7 +149,7 @@ export interface PropertyFilterProps extends BaseComponentProps, ExpandToViewpor
    */
   customFilterActions?: React.ReactNode;
   /**
-   * Set `asyncProperties` if you need to load `filteringProperties` asynchronousely. This would cause extra `onLoadMore`
+   * Set `asyncProperties` if you need to load `filteringProperties` asynchronously. This would cause extra `onLoadMore`
    * events to fire calling for more properties.
    */
   asyncProperties?: boolean;
@@ -221,11 +225,7 @@ export namespace PropertyFilterProps {
   export type FilteringOption = PropertyFilterOption;
   export type FilteringProperty = PropertyFilterProperty;
   export type FreeTextFiltering = PropertyFilterFreeTextFiltering;
-
-  export interface Query {
-    tokens: ReadonlyArray<PropertyFilterProps.Token>;
-    operation: PropertyFilterProps.JoinOperation;
-  }
+  export type Query = PropertyFilterQuery;
 
   export interface LoadItemsDetail {
     filteringProperty?: FilteringProperty;
@@ -274,12 +274,21 @@ export namespace PropertyFilterProps {
     applyActionText?: string;
     allPropertiesLabel?: string;
 
+    formatToken?: (token: FormattedToken) => string;
+
     tokenLimitShowMore?: string;
     tokenLimitShowFewer?: string;
     clearFiltersText?: string;
     tokenOperatorAriaLabel?: string;
-    removeTokenButtonAriaLabel?: (token: PropertyFilterProps.Token) => string;
+    removeTokenButtonAriaLabel?: (token: FormattedToken) => string;
     enteredTextLabel?: AutosuggestProps.EnteredTextLabel;
+  }
+
+  export interface FormattedToken {
+    propertyKey?: string;
+    propertyLabel: string;
+    operator: ComparisonOperator;
+    value: string;
   }
 
   export interface GroupText {
@@ -303,6 +312,26 @@ export namespace PropertyFilterProps {
 
 // Re-exported namespace interfaces to use module-style imports internally
 
+export type TokenGroup = PropertyFilterTokenGroup;
+
+export interface FormattedTokenGroup {
+  tokens: FormattedToken[];
+  operation: string;
+  operationLabel: string;
+}
+
+export interface I18nStringsTokenGroups {
+  groupEditAriaLabel?: (group: FormattedTokenGroup) => string;
+  tokenEditorTokenActionsAriaLabel?: (token: FormattedToken) => string;
+  tokenEditorTokenRemoveAriaLabel?: (token: FormattedToken) => string;
+  tokenEditorTokenRemoveLabel?: string;
+  tokenEditorTokenRemoveFromGroupLabel?: string;
+  tokenEditorAddNewTokenLabel?: string;
+  tokenEditorAddTokenActionsAriaLabel?: string;
+  tokenEditorAddExistingTokenAriaLabel?: (token: FormattedToken) => string;
+  tokenEditorAddExistingTokenLabel?: (token: FormattedToken) => string;
+}
+
 export type Token = PropertyFilterProps.Token;
 export type JoinOperation = PropertyFilterProps.JoinOperation;
 export type ComparisonOperator = PropertyFilterProps.ComparisonOperator;
@@ -317,6 +346,7 @@ export type LoadItemsDetail = PropertyFilterProps.LoadItemsDetail;
 export type I18nStrings = PropertyFilterProps.I18nStrings;
 export type GroupText = PropertyFilterProps.GroupText;
 export type FilteringChangeDetail = PropertyFilterProps.FilteringChangeDetail;
+export type FormattedToken = PropertyFilterProps.FormattedToken;
 export type Ref = PropertyFilterProps.Ref;
 
 // Utility types
@@ -347,15 +377,18 @@ export interface InternalFreeTextFiltering {
 }
 
 export interface InternalToken<TokenValue = any> {
+  standaloneIndex?: number;
   property: null | InternalFilteringProperty<TokenValue>;
   operator: PropertyFilterOperator;
   value: TokenValue;
 }
 
-export interface InternalQuery {
+export interface InternalTokenGroup<TokenValue = any> {
   operation: PropertyFilterOperation;
-  tokens: readonly InternalToken[];
+  tokens: readonly (InternalToken<TokenValue> | InternalTokenGroup<TokenValue>)[];
 }
+
+export type InternalQuery = InternalTokenGroup;
 
 export type ParsedText =
   | { step: 'property'; property: InternalFilteringProperty; operator: ComparisonOperator; value: string }

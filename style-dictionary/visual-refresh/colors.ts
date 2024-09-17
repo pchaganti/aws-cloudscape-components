@@ -1,10 +1,10 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+import { expandColorDictionary } from '../utils';
 import { StyleDictionary } from '../utils/interfaces';
 
-import { expandColorDictionary } from '../utils';
-
 const tokens: StyleDictionary.ColorsDictionary = {
+  colorGreyOpaque10: 'rgba(0, 0, 0, 0.1)',
   colorGreyOpaque25: 'rgba(255, 255, 255, 0.25)',
   colorGreyOpaque40: 'rgba(0, 0, 0, 0.4)',
   colorGreyOpaque50: 'rgba(0, 0, 0, 0.5)',
@@ -21,9 +21,10 @@ const tokens: StyleDictionary.ColorsDictionary = {
   colorBackgroundButtonNormalDefault: { light: '{colorWhite}', dark: '{colorGrey800}' },
   colorBackgroundButtonNormalDisabled: { light: '{colorWhite}', dark: '{colorGrey800}' },
   colorBackgroundButtonNormalHover: { light: '{colorBlue100}', dark: '{colorGrey750}' },
+  colorBackgroundToggleButtonNormalPressed: { light: '{colorBlue200}', dark: '{colorGrey650}' },
   colorBackgroundButtonPrimaryActive: { light: '{colorBlue800}', dark: '{colorBlue500}' },
   colorBackgroundButtonPrimaryDefault: '{colorBorderButtonNormalDefault}',
-  colorBackgroundButtonPrimaryDisabled: { light: '{colorGrey200}', dark: '{colorGrey650}' },
+  colorBackgroundButtonPrimaryDisabled: { light: '{colorGrey200}', dark: '{colorGrey700}' },
   colorBackgroundButtonPrimaryHover: '{colorBorderButtonNormalHover}',
   colorBackgroundCalendarCurrentDate: { light: '{colorGrey150}', dark: '{colorGrey650}' },
   colorBackgroundCellShaded: { light: '{colorGrey125}', dark: '{colorGrey750}' },
@@ -97,9 +98,12 @@ const tokens: StyleDictionary.ColorsDictionary = {
     'linear-gradient(90deg, #99f7ff 0%, #0096fa 10%, #bf80ff 24%, #7300e5 50%, #bf80ff 76%, #0096fa 90%, #99f7ff 100%)',
   colorBorderButtonNormalActive: { light: '{colorBlue800}', dark: '{colorBlue400}' },
   colorBorderButtonNormalDefault: { light: '{colorBlue600}', dark: '{colorBlue500}' },
+  colorBorderToggleButtonNormalPressed: { light: '{colorBlue600}', dark: '{colorBlue500}' },
   colorBorderButtonNormalDisabled: { light: '{colorGrey400}', dark: '{colorGrey550}' },
+  colorTextButtonNormalDisabled: { light: '{colorGrey500}', dark: '{colorGrey500}' },
   colorBorderButtonNormalHover: { light: '{colorBlue800}', dark: '{colorBlue400}' },
   colorBorderButtonPrimaryDisabled: '{colorBackgroundButtonPrimaryDisabled}',
+  colorTextButtonPrimaryDisabled: { light: '{colorGrey500}', dark: '{colorGrey500}' },
   colorBorderCalendarGrid: 'transparent',
   colorBorderCalendarGridSelectedFocusRing: { light: '{colorGrey100}', dark: '{colorGrey800}' },
   colorBorderCodeEditorAceActiveLineLightTheme: '{colorGrey300}',
@@ -131,7 +135,7 @@ const tokens: StyleDictionary.ColorsDictionary = {
   colorBorderDropdownItemFocused: { light: '{colorGrey600}', dark: '{colorGrey300}' },
   colorBorderItemPlaceholder: '{colorBorderItemSelected}',
   colorBorderItemSelected: { light: '{colorBlue600}', dark: '{colorBlue500}' },
-  colorBorderLayout: { light: '{colorGrey300}', dark: '{colorGrey650}' },
+  colorBorderLayout: { light: '{colorGrey400}', dark: '{colorGrey600}' },
   colorBorderNotificationStackBar: '{colorGrey700}',
   colorBorderPanelHeader: '{colorBorderDividerDefault}',
   colorBorderPopover: { light: '{colorGrey400}', dark: '{colorGrey550}' },
@@ -168,6 +172,7 @@ const tokens: StyleDictionary.ColorsDictionary = {
   colorTextButtonInlineIconDisabled: '{colorTextInteractiveDisabled}',
   colorTextButtonInlineIconHover: '{colorTextLinkHover}',
   colorTextButtonNormalActive: { light: '{colorBlue800}', dark: '{colorBlue400}' },
+  colorTextToggleButtonNormalPressed: { light: '{colorBlue800}', dark: '{colorBlue400}' },
   colorTextButtonNormalDefault: { light: '{colorBlue600}', dark: '{colorBlue500}' },
   colorTextButtonNormalHover: { light: '{colorBlue800}', dark: '{colorBlue400}' },
   colorTextLinkButtonNormalDefault: '{colorTextButtonNormalDefault}',
@@ -220,6 +225,7 @@ const tokens: StyleDictionary.ColorsDictionary = {
   colorTextInteractiveDefault: { light: '{colorGrey600}', dark: '{colorGrey300}' },
   colorTextInteractiveDisabled: { light: '{colorGrey400}', dark: '{colorGrey550}' },
   colorTextInteractiveHover: { light: '{colorGrey900}', dark: '{colorGrey100}' },
+  colorTextToggleButtonIconPressed: { light: '{colorGrey900}', dark: '{colorGrey100}' },
   colorTextInteractiveInvertedDefault: '{colorGrey300}',
   colorTextInteractiveInvertedHover: '{colorGrey100}',
   colorTextInverted: { light: '{colorWhite}', dark: '{colorGrey900}' },
@@ -256,6 +262,16 @@ const tokens: StyleDictionary.ColorsDictionary = {
   colorDropzoneBackgroundHover: { light: '{colorBlue200}', dark: '{colorBlue600}' },
   colorDropzoneTextActive: { light: '{colorGrey550}', dark: '{colorGrey800}' },
   colorDropzoneTextHover: { light: '{colorBlue800}', dark: '{colorWhite}' },
+  colorBackgroundSeverityCritical: '{colorChartsStatusCritical}',
+  colorTextSeverityCritical: { light: '{colorGrey100}', dark: '{colorBlack}' },
+  colorBackgroundSeverityHigh: '{colorChartsStatusHigh}',
+  colorTextSeverityHigh: { light: '{colorGrey100}', dark: '{colorGrey900}' },
+  colorBackgroundSeverityMedium: '{colorChartsStatusMedium}',
+  colorTextSeverityMedium: '{colorGrey900}',
+  colorBackgroundSeverityLow: '{colorChartsStatusLow}',
+  colorTextSeverityLow: '{colorGrey900}',
+  colorBackgroundSeverityNeutral: { light: '{colorGrey600}', dark: '{colorGrey550}' },
+  colorTextSeverityNeutral: '{colorGrey100}',
 };
 
 const expandedTokens: StyleDictionary.ExpandedColorScopeDictionary = expandColorDictionary(tokens);

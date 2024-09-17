@@ -1,7 +1,9 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React, { useState } from 'react';
+
 import { ButtonDropdown, ButtonDropdownProps } from '~components';
+
 import ScreenshotArea from '../utils/screenshot-area';
 
 const actionsItems: ButtonDropdownProps.Items = [
@@ -99,6 +101,31 @@ const actionsItems: ButtonDropdownProps.Items = [
   { text: 'Monitor and troubleshoot', items: [{ id: 'system-log', text: 'Get System log' }] },
 ];
 
+export const selectableGroupItems: ButtonDropdownProps.Items = [
+  {
+    text: 'Settings group',
+    id: 'setting-group',
+    items: [
+      {
+        text: 'Setting',
+        id: 'setting',
+        itemType: 'checkbox',
+        checked: true,
+        disabled: false,
+      },
+      {
+        text: 'Disabled setting',
+        id: 'setting',
+        itemType: 'checkbox',
+        checked: true,
+        disabled: true,
+        disabledReason: 'disabled reason',
+      },
+    ],
+  },
+  { text: 'Action', id: 'action', disabled: false },
+];
+
 export default function DescriptionPage() {
   const [isRightAligned, setIsRightAligned] = useState(false);
   return (
@@ -114,9 +141,27 @@ export default function DescriptionPage() {
         Right Align
       </label>
       <ScreenshotArea disableAnimations={true}>
-        <div style={{ float: isRightAligned ? 'right' : undefined }}>
+        <div style={{ float: isRightAligned ? 'right' : undefined, marginBottom: '100px' }}>
           <ButtonDropdown items={actionsItems} expandableGroups={true} data-testid="buttonDropdown">
             Actions
+          </ButtonDropdown>
+        </div>
+        <div style={{ float: isRightAligned ? 'right' : undefined, marginBottom: '100px' }}>
+          <ButtonDropdown items={actionsItems} expandableGroups={true} disabled={true} disabledReason="disabled reason">
+            Actions
+          </ButtonDropdown>
+        </div>
+        <div style={{ float: isRightAligned ? 'right' : undefined, marginBottom: '100px' }}>
+          <ButtonDropdown
+            items={actionsItems}
+            ariaLabel="Instance actions"
+            mainAction={{ text: 'Launch instance', disabled: true, disabledReason: 'disabled reason' }}
+            variant="primary"
+          />
+        </div>
+        <div style={{ float: isRightAligned ? 'right' : undefined, marginBottom: '100px' }}>
+          <ButtonDropdown items={selectableGroupItems} data-testid="buttonDropdownSelectableItems">
+            Selectable example
           </ButtonDropdown>
         </div>
       </ScreenshotArea>

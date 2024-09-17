@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as React from 'react';
 import { render } from '@testing-library/react';
-import createWrapper, { PaginationWrapper } from '../../../lib/components/test-utils/dom';
+
 import Pagination from '../../../lib/components/pagination';
+import createWrapper, { PaginationWrapper } from '../../../lib/components/test-utils/dom';
 
 const getItemsContent = (wrapper: PaginationWrapper) =>
   wrapper
@@ -187,6 +188,7 @@ test('should not fire nextPageClick event when clicking next page with the last 
         <Pagination currentPageIndex={1} pagesCount={10} openEnd={openEnd} disabled={true} onChange={onChange} />
       );
 
+      expect(wrapper.isDisabled()).toBe(true);
       expect(wrapper.findPreviousPageButton().getElement()).toBeDisabled();
       expect(wrapper.findNextPageButton().getElement()).toBeDisabled();
 

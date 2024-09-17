@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { BasePageObject } from '@cloudscape-design/browser-test-tools/page-objects';
 import useBrowser from '@cloudscape-design/browser-test-tools/use-browser';
+
 import createWrapper from '../../../lib/components/test-utils/selectors';
 
 const wrapper = createWrapper().findAppLayout();
@@ -86,6 +87,16 @@ for (const visualRefresh of [true, false]) {
           );
           await page.click(wrapper.findToolsClose().toSelector());
           await expect(page.isDisplayed(wrapper.findToolsClose().toSelector())).resolves.toBeFalsy();
+        })
+      );
+
+      test(
+        'should move focus to previous focused element after closing tools',
+        setupTest(async page => {
+          await page.click('[data-testid="info-link-header"]');
+          await expect(page.isFocused(wrapper.findToolsClose().toSelector())).resolves.toBe(true);
+          await page.click(wrapper.findToolsClose().toSelector());
+          await expect(page.isFocused('[data-testid="info-link-header"]')).resolves.toBe(true);
         })
       );
     });

@@ -1,15 +1,23 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import { act } from 'react-dom/test-utils';
-import { ComponentWrapper, ElementWrapper, usesDom, createWrapper } from '@cloudscape-design/test-utils-core/dom';
-import styles from '../../../date-range-picker/styles.selectors.js';
+import { ComponentWrapper, createWrapper, ElementWrapper, usesDom } from '@cloudscape-design/test-utils-core/dom';
+import { act } from '@cloudscape-design/test-utils-core/utils-dom';
+
+import ButtonWrapper from '../button';
+import InputWrapper from '../input';
+import RadioGroupWrapper from '../radio-group';
+import SegmentedControlWrapper from '../segmented-control';
+import SelectWrapper from '../select';
+
 import gridStyles from '../../../date-range-picker/calendar/grids/styles.selectors.js';
 import relativeRangeStyles from '../../../date-range-picker/relative-range/styles.selectors.js';
-import SelectWrapper from '../select';
-import ButtonWrapper from '../button';
-import RadioGroupWrapper from '../radio-group';
-import InputWrapper from '../input';
-import SegmentedControlWrapper from '../segmented-control';
+import styles from '../../../date-range-picker/styles.selectors.js';
+
+export class CalendarDateWrapper extends ComponentWrapper {
+  findDisabledReason(): ElementWrapper | null {
+    return createWrapper().find(`.${gridStyles['disabled-reason-tooltip']}`);
+  }
+}
 
 export default class DateRangePickerWrapper extends ComponentWrapper {
   static rootSelector: string = styles.root;
@@ -107,10 +115,15 @@ export class DrpDropdownWrapper extends ComponentWrapper {
    * @param row 1-based row index of the day.
    * @param column 1-based column index of the day.
    */
-  findDateAt(grid: 'left' | 'right', row: 1 | 2 | 3 | 4 | 5 | 6, column: 1 | 2 | 3 | 4 | 5 | 6 | 7): ElementWrapper {
+  findDateAt(
+    grid: 'left' | 'right',
+    row: 1 | 2 | 3 | 4 | 5 | 6,
+    column: 1 | 2 | 3 | 4 | 5 | 6 | 7
+  ): CalendarDateWrapper {
     const gridClassName = grid === 'right' ? styles['second-grid'] : styles['first-grid'];
-    return this.find(
-      `.${gridClassName} .${gridStyles.week}:nth-child(${row}) .${gridStyles.day}:nth-child(${column})`
+    return this.findComponent(
+      `.${gridClassName} .${gridStyles.week}:nth-child(${row}) .${gridStyles.day}:nth-child(${column})`,
+      CalendarDateWrapper
     )!;
   }
 

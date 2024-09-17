@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
 import { render } from '@testing-library/react';
-import createWrapper, { ExpandableSectionWrapper } from '../../../lib/components/test-utils/dom';
-import ExpandableSection, { ExpandableSectionProps } from '../../../lib/components/expandable-section';
+
+import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
+
+import '../../__a11y__/to-validate-a11y';
 import Button from '../../../lib/components/button';
+import ExpandableSection, { ExpandableSectionProps } from '../../../lib/components/expandable-section';
 import Header from '../../../lib/components/header';
 import Link from '../../../lib/components/link';
-import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
-import '../../__a11y__/to-validate-a11y';
+import createWrapper, { ExpandableSectionWrapper } from '../../../lib/components/test-utils/dom';
 
 jest.mock('@cloudscape-design/component-toolkit/internal', () => ({
   ...jest.requireActual('@cloudscape-design/component-toolkit/internal'),
@@ -25,11 +27,17 @@ function renderExpandableSection(props: ExpandableSectionProps = {}): Expandable
 }
 
 const containerizedVariants: ExpandableSectionProps.Variant[] = ['container', 'stacked'];
+const variantsWithActions: ExpandableSectionProps.Variant[] = ['container', 'stacked', 'default', 'inline'];
 
 describe('Expandable Section', () => {
-  const variantsWithDescription: ExpandableSectionProps.Variant[] = [...containerizedVariants, 'default', 'footer'];
+  const variantsWithDescription: ExpandableSectionProps.Variant[] = [
+    ...containerizedVariants,
+    'default',
+    'footer',
+    'inline',
+  ];
   const variantsWithoutDescription: ExpandableSectionProps.Variant[] = ['navigation'];
-  const nonContainerVariants: ExpandableSectionProps.Variant[] = ['default', 'footer', 'navigation'];
+  const nonContainerVariants: ExpandableSectionProps.Variant[] = ['default', 'footer', 'navigation', 'inline'];
 
   describe('variant property', () => {
     test('has one trigger button and no div=[role=button] for variant navigation', () => {
@@ -93,7 +101,7 @@ describe('Expandable Section', () => {
       }
     });
     describe('populates action buttons slot correctly', () => {
-      for (const variant of containerizedVariants) {
+      for (const variant of variantsWithActions) {
         test(`${variant} variant`, () => {
           const wrapper = renderExpandableSection({
             headerText: 'Test Header',
@@ -106,7 +114,7 @@ describe('Expandable Section', () => {
         });
       }
     });
-    test.each<ExpandableSectionProps.Variant>(['default', 'footer', 'container', 'navigation', 'stacked'])(
+    test.each<ExpandableSectionProps.Variant>(['default', 'footer', 'container', 'navigation', 'stacked', 'inline'])(
       'populates content slot correctly for "%s" variant',
       variant => {
         const wrapper = renderExpandableSection({
@@ -162,17 +170,31 @@ describe('Expandable Section', () => {
             const header = wrapper.findHeader().getElement();
             expect(header).not.toHaveTextContent('Info');
           });
-          test('Action buttons', () => {
-            const wrapper = renderExpandableSection({
-              variant,
-              headerText: 'Test Header',
-              headerInfo: <Button>Action</Button>,
+          if (variant !== 'default') {
+            test('Action buttons', () => {
+              const wrapper = renderExpandableSection({
+                variant,
+                headerText: 'Test Header',
+                headerInfo: <Button>Action</Button>,
+              });
+              const header = wrapper.findHeader().getElement();
+              expect(header).not.toHaveTextContent('Action');
             });
-            const header = wrapper.findHeader().getElement();
-            expect(header).not.toHaveTextContent('Action');
-          });
+          }
         });
       }
+    });
+    test('header in inline variant', () => {
+      const wrapper = renderExpandableSection({
+        variant: 'inline',
+        header: 'Test header',
+      });
+      const header = wrapper.findHeader().getElement();
+      expect(header).not.toHaveTextContent('Test header');
+      expect(warnOnce).toHaveBeenCalledWith(
+        'ExpandableSection',
+        'Only `headerText` instead of `header` is supported for `inline` variant.'
+      );
     });
   });
 
@@ -291,10 +313,7 @@ describe('Expandable Section', () => {
         const testWarnings = (props: ExpandableSectionProps) => {
           render(<ExpandableSection {...props} />);
           expect(warnOnce).toHaveBeenCalledTimes(1);
-          expect(warnOnce).toHaveBeenCalledWith(
-            componentName,
-            'The `headerCounter`, `headerInfo` and `headerActions` props are only supported for the "container" variant.'
-          );
+          expect(warnOnce).toHaveBeenCalledWith(componentName, expect.stringMatching(/only supported for the/));
         };
 
         for (const variant of nonContainerVariants) {
@@ -305,9 +324,11 @@ describe('Expandable Section', () => {
             test('headerInfo', () => {
               testWarnings({ variant, headerInfo: <Link>Info</Link> });
             });
-            test('headerActions', () => {
-              testWarnings({ variant, headerActions: <Button>Action</Button> });
-            });
+            if (!variantsWithActions.includes(variant)) {
+              test('headerActions', () => {
+                testWarnings({ variant, headerActions: <Button>Action</Button> });
+              });
+            }
           });
         }
       });

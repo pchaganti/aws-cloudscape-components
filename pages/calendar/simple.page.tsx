@@ -1,8 +1,10 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import * as React from 'react';
+
 import Calendar from '~components/calendar';
 import Dropdown from '~components/internal/components/dropdown';
+
 import i18nStrings from './i18n-strings';
 
 export default function CalendarPage() {
@@ -24,6 +26,17 @@ export default function CalendarPage() {
           ariaLabel="Certificate expiration date, calendar"
           startOfWeek={1}
           isDateEnabled={date => date.getDay() !== 6 && date.getDay() !== 0}
+          dateDisabledReason={date => {
+            if (date.getDay() === 6) {
+              return 'Saturday';
+            }
+
+            if (date.getDay() === 0) {
+              return 'Sunday';
+            }
+
+            return '';
+          }}
           i18nStrings={i18nStrings}
         />
         <Calendar

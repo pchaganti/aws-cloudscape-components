@@ -2,25 +2,31 @@
 // SPDX-License-Identifier: Apache-2.0
 import React, { useEffect, useRef } from 'react';
 import clsx from 'clsx';
-import styles from './styles.css.js';
-import { ButtonDropdownProps, InternalButtonDropdownProps } from './interfaces';
+
+import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
+import { getAnalyticsMetadataAttribute } from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
+
+import InternalBox from '../box/internal';
+import { ButtonProps } from '../button/interfaces';
+import { InternalButton, InternalButtonProps } from '../button/internal';
+import { useFunnel } from '../internal/analytics/hooks/use-funnel.js';
 import { getBaseProps } from '../internal/base-component';
-import { useUniqueId } from '../internal/hooks/use-unique-id';
 import Dropdown from '../internal/components/dropdown';
+import OptionsList from '../internal/components/options-list';
+import useForwardFocus from '../internal/hooks/forward-focus';
+import { useMobile } from '../internal/hooks/use-mobile';
+import { useUniqueId } from '../internal/hooks/use-unique-id';
+import { useVisualRefresh } from '../internal/hooks/use-visual-mode/index.js';
+import { isDevelopment } from '../internal/is-development';
+import { checkSafeUrl } from '../internal/utils/check-safe-url';
+import { GeneratedAnalyticsMetadataButtonDropdownExpand } from './analytics-metadata/interfaces.js';
+import { ButtonDropdownProps, InternalButtonDropdownProps } from './interfaces';
 import ItemsList from './items-list';
 import { useButtonDropdown } from './utils/use-button-dropdown';
-import OptionsList from '../internal/components/options-list';
-import { InternalButton, InternalButtonProps } from '../button/internal';
-import { ButtonProps } from '../button/interfaces';
-import { useMobile } from '../internal/hooks/use-mobile';
-import useForwardFocus from '../internal/hooks/forward-focus';
-import InternalBox from '../box/internal';
-import { checkSafeUrl } from '../internal/utils/check-safe-url';
-import { isDevelopment } from '../internal/is-development';
-import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
-import { useVisualRefresh } from '../internal/hooks/use-visual-mode/index.js';
-import { useFunnel } from '../internal/analytics/hooks/use-funnel.js';
 import { isLinkItem } from './utils/utils.js';
+
+import analyticsSelectors from './analytics-metadata/styles.css.js';
+import styles from './styles.css.js';
 
 const InternalButtonDropdown = React.forwardRef(
   (
@@ -30,6 +36,7 @@ const InternalButtonDropdown = React.forwardRef(
       loading = false,
       loadingText,
       disabled = false,
+      disabledReason,
       expandableGroups = false,
       children,
       onItemClick,
@@ -41,7 +48,10 @@ const InternalButtonDropdown = React.forwardRef(
       description,
       preferCenter,
       mainAction,
+      showMainActionOnly,
       __internalRootRef,
+      analyticsMetadataTransformer,
+      linkStyle,
       ...props
     }: InternalButtonDropdownProps,
     ref: React.Ref<ButtonDropdownProps.Ref>
@@ -123,12 +133,17 @@ const InternalButtonDropdown = React.forwardRef(
           };
 
     const baseTriggerProps: InternalButtonProps = {
-      className: clsx(styles['trigger-button'], styles['test-utils-button-trigger']),
+      className: clsx(
+        styles['trigger-button'],
+        styles['test-utils-button-trigger'],
+        analyticsSelectors['trigger-label']
+      ),
       ...iconProps,
       variant: triggerVariant,
       loading,
       loadingText,
       disabled,
+      disabledReason,
       onClick: (event: Event) => {
         event.preventDefault();
         clickHandler();
@@ -162,9 +177,20 @@ const InternalButtonDropdown = React.forwardRef(
     };
 
     let trigger: React.ReactNode = null;
+
+    const analyticsMetadata: GeneratedAnalyticsMetadataButtonDropdownExpand | Record<string, never> = disabled
+      ? {}
+      : {
+          action: 'expand',
+          detail: {
+            expanded: `${!isOpen}`,
+            label: `.${analyticsSelectors['trigger-label']}`,
+          },
+        };
+
     if (customTriggerBuilder) {
       trigger = (
-        <div className={styles['dropdown-trigger']}>
+        <div className={styles['dropdown-trigger']} {...getAnalyticsMetadataAttribute(analyticsMetadata)}>
           {customTriggerBuilder({
             testUtilsClass: styles['test-utils-button-trigger'],
             ariaExpanded: canBeOpened && isOpen,
@@ -172,6 +198,7 @@ const InternalButtonDropdown = React.forwardRef(
             triggerRef,
             ariaLabel,
             disabled,
+            disabledReason,
             isOpen,
           })}
         </div>
@@ -184,44 +211,71 @@ const InternalButtonDropdown = React.forwardRef(
         : ({ iconName, iconAlt, iconSvg, iconUrl } as const);
       const mainActionAriaLabel = externalIconAriaLabel
         ? `${mainAction.ariaLabel ?? mainAction.text} ${mainAction.externalIconAriaLabel}`
-        : undefined;
-
-      trigger = (
+        : mainAction.ariaLabel;
+      const hasNoText = !text;
+      const mainActionButton = (
+        <InternalButton
+          ref={mainActionRef}
+          {...mainActionProps}
+          {...mainActionIconProps}
+          className={clsx(
+            styles['trigger-button'],
+            hasNoText && styles['has-no-text'],
+            isVisualRefresh && styles['visual-refresh']
+          )}
+          variant={variant}
+          ariaLabel={mainActionAriaLabel}
+          formAction="none"
+        >
+          {text}
+        </InternalButton>
+      );
+      trigger = showMainActionOnly ? (
+        <div className={styles['split-trigger']}>{mainActionButton}</div>
+      ) : (
         <div role="group" aria-label={ariaLabel} className={styles['split-trigger-wrapper']}>
           <div
-            className={clsx(styles['trigger-item'], styles['split-trigger'])}
+            className={clsx(
+              styles['trigger-item'],
+              styles['split-trigger'],
+              styles[`variant-${variant}`],
+              mainActionProps.disabled && styles.disabled,
+              mainActionProps.loading && styles.loading
+            )}
             // Close dropdown upon main action click unless event is cancelled.
             onClick={closeDropdown}
             // Prevent keyboard events from propagation to the button dropdown handler.
             onKeyDown={e => e.stopPropagation()}
             onKeyUp={e => e.stopPropagation()}
+            {...getAnalyticsMetadataAttribute({
+              action: 'click',
+              detail: {
+                label: `.${analyticsSelectors['main-action-label']}`,
+              },
+            })}
           >
-            <InternalButton
-              ref={mainActionRef}
-              {...mainActionProps}
-              {...mainActionIconProps}
-              className={styles['trigger-button']}
-              variant={variant}
-              ariaLabel={mainActionAriaLabel}
-              formAction="none"
-            >
-              {text}
-            </InternalButton>
+            {mainActionButton}
           </div>
           <div
             className={clsx(
               styles['trigger-item'],
               styles['dropdown-trigger'],
-              isVisualRefresh && styles['visual-refresh']
+              isVisualRefresh && styles['visual-refresh'],
+              styles[`variant-${variant}`],
+              baseTriggerProps.disabled && styles.disabled,
+              baseTriggerProps.loading && styles.loading
             )}
+            {...getAnalyticsMetadataAttribute(analyticsMetadata)}
           >
-            <InternalButton ref={triggerRef} {...baseTriggerProps} />
+            <InternalButton ref={triggerRef} {...baseTriggerProps} __emitPerformanceMarks={false}>
+              {children}
+            </InternalButton>
           </div>
         </div>
       );
     } else {
       trigger = (
-        <div className={styles['dropdown-trigger']}>
+        <div className={styles['dropdown-trigger']} {...getAnalyticsMetadataAttribute(analyticsMetadata)}>
           <InternalButton ref={triggerRef} id={triggerId} {...baseTriggerProps} badge={triggerHasBadge()}>
             {children}
           </InternalButton>
@@ -310,6 +364,8 @@ const InternalButtonDropdown = React.forwardRef(
               highlightItem={highlightItem}
               expandToViewport={expandToViewport}
               variant={variant}
+              analyticsMetadataTransformer={analyticsMetadataTransformer}
+              linkStyle={linkStyle}
             />
           </OptionsList>
         </Dropdown>

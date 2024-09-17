@@ -1,8 +1,9 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
+
 import { BaseComponentProps } from '../internal/base-component';
-import { NonCancelableEventHandler, CancelableEventHandler } from '../internal/events';
+import { CancelableEventHandler, NonCancelableEventHandler } from '../internal/events';
 import { Optional } from '../internal/types';
 import ColumnDisplayProperties = TableProps.ColumnDisplayProperties;
 
@@ -21,6 +22,12 @@ export interface TableForwardRefType {
 }
 
 export interface TableProps<T = any> extends BaseComponentProps {
+  /**
+   * Specifies additional analytics-related metadata.
+   * * `instanceIdentifier` - A unique string that identifies this component instance in your application.
+   * @analytics
+   */
+  analyticsMetadata?: TableProps.AnalyticsMetadata;
   /**
    * Heading element of the table container. Use the [header component](/components/header/).
    */
@@ -105,6 +112,7 @@ export interface TableProps<T = any> extends BaseComponentProps {
    *     * `cellContext.currentValue` - State to keep track of a value in input fields while editing.
    *     * `cellContext.setValue` - Function to update `currentValue`. This should be called when the value in input field changes.
    * * `isRowHeader` (boolean) - Specifies that cells in this column should be used as row headers.
+   * * `verticalAlign` ('middle' | 'top') - Determines the alignment of the content in the table cell.
    */
   columnDefinitions: ReadonlyArray<TableProps.ColumnDefinition<T>>;
   /**
@@ -371,6 +379,10 @@ export interface TableProps<T = any> extends BaseComponentProps {
 }
 
 export namespace TableProps {
+  export interface AnalyticsMetadata {
+    instanceIdentifier?: string;
+  }
+
   export type TrackBy<T> = string | ((item: T) => string);
 
   export interface CellContext<V> {
@@ -426,6 +438,7 @@ export namespace TableProps {
     maxWidth?: number | string;
     editConfig?: EditConfig<ItemType>;
     isRowHeader?: boolean;
+    verticalAlign?: VerticalAlign;
     cell(item: ItemType): React.ReactNode;
   } & SortingColumn<ItemType>;
 
@@ -434,6 +447,7 @@ export namespace TableProps {
     last?: number;
   }
 
+  export type VerticalAlign = 'middle' | 'top';
   export type SelectionType = 'single' | 'multi';
   export type Variant = 'container' | 'embedded' | 'borderless' | 'stacked' | 'full-page';
   export interface SelectionState<T> {

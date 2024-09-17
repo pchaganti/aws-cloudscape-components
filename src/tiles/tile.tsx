@@ -1,16 +1,19 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-import clsx from 'clsx';
 import React, { useRef } from 'react';
+import clsx from 'clsx';
 
-import { TilesProps } from './interfaces';
-import RadioButton from '../radio-group/radio-button';
-import styles from './styles.css.js';
+import { copyAnalyticsMetadataAttribute } from '@cloudscape-design/component-toolkit/internal/analytics-metadata';
 
-import { useContainerBreakpoints } from '../internal/hooks/container-queries';
 import { fireNonCancelableEvent } from '../internal/events';
+import { useContainerBreakpoints } from '../internal/hooks/container-queries';
 import { useMergeRefs } from '../internal/hooks/use-merge-refs';
 import { useVisualRefresh } from '../internal/hooks/use-visual-mode';
+import RadioButton from '../radio-group/radio-button';
+import { TilesProps } from './interfaces';
+
+import analyticsSelectors from './analytics-metadata/styles.css.js';
+import styles from './styles.css.js';
 
 interface TileProps {
   item: TilesProps.TilesDefinition;
@@ -22,7 +25,10 @@ interface TileProps {
 }
 
 export const Tile = React.forwardRef(
-  ({ item, selected, name, breakpoint, onChange, readOnly }: TileProps, forwardedRef: React.Ref<HTMLInputElement>) => {
+  (
+    { item, selected, name, breakpoint, onChange, readOnly, ...rest }: TileProps,
+    forwardedRef: React.Ref<HTMLInputElement>
+  ) => {
     const internalRef = useRef<HTMLInputElement>(null);
     const isVisualRefresh = useVisualRefresh();
 
@@ -49,6 +55,7 @@ export const Tile = React.forwardRef(
             fireNonCancelableEvent(onChange, { value: item.value });
           }
         }}
+        {...copyAnalyticsMetadataAttribute(rest)}
       >
         <div className={clsx(styles.control, { [styles['no-image']]: !item.image })}>
           <RadioButton
@@ -61,6 +68,7 @@ export const Tile = React.forwardRef(
             disabled={item.disabled}
             controlId={item.controlId}
             readOnly={readOnly}
+            className={analyticsSelectors['radio-button']}
           />
         </div>
         {item.image && <div className={clsx(styles.image, { [styles.disabled]: !!item.disabled })}>{item.image}</div>}
