@@ -1,7 +1,11 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-import { setFunnelMetrics, setPerformanceMetrics } from '../../../../lib/components/internal/analytics';
+import {
+  setComponentMetrics,
+  setFunnelMetrics,
+  setPerformanceMetrics,
+} from '../../../../lib/components/internal/analytics';
 
 export const mockedFunnelInteractionId = 'mocked-funnel-id';
 export function mockFunnelMetrics() {
@@ -26,7 +30,15 @@ export function mockFunnelMetrics() {
 }
 
 export function mockPerformanceMetrics() {
-  setPerformanceMetrics({ tableInteraction: jest.fn() });
+  setPerformanceMetrics({
+    tableInteraction: jest.fn(),
+    taskCompletionData: jest.fn(),
+    modalPerformanceData: jest.fn(),
+  });
+}
+
+export function mockComponentMetrics() {
+  setComponentMetrics({ componentMounted: jest.fn(), componentUpdated: jest.fn() });
 }
 
 export function mockInnerText() {
@@ -47,4 +59,26 @@ export function mockInnerText() {
 
     afterEach(() => delete (HTMLElement.prototype as Partial<HTMLElement>).innerText);
   }
+}
+
+export function mockGetBoundingClientRect() {
+  beforeEach(() => {
+    Element.prototype.getBoundingClientRect = jest.fn(() => {
+      return {
+        width: 100,
+        height: 100,
+        top: 0,
+        left: 0,
+        bottom: 0,
+        right: 0,
+        x: 0,
+        y: 0,
+        toJSON: jest.fn(),
+      };
+    });
+  });
+
+  afterEach(() => {
+    delete (Element.prototype as Partial<Element>).getBoundingClientRect;
+  });
 }

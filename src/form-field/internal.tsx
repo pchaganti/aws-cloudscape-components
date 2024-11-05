@@ -15,16 +15,16 @@ import {
   DATA_ATTR_FIELD_ERROR,
   DATA_ATTR_FIELD_LABEL,
   getFieldSlotSeletor,
-  getNameFromSelector,
   getSubStepAllSelector,
+  getTextFromSelector,
 } from '../internal/analytics/selectors';
 import { getBaseProps } from '../internal/base-component';
-import LiveRegion from '../internal/components/live-region';
 import { FormFieldContext, useFormFieldContext } from '../internal/context/form-field-context';
 import { InfoLinkLabelContext } from '../internal/context/info-link-label-context';
 import { useUniqueId } from '../internal/hooks/use-unique-id';
 import { useVisualRefresh } from '../internal/hooks/use-visual-mode';
 import { joinStrings } from '../internal/utils/strings';
+import InternalLiveRegion from '../live-region/internal';
 import { InternalFormFieldProps } from './interfaces';
 import { getAriaDescribedBy, getGridDefinition, getSlotIds } from './util';
 
@@ -61,7 +61,7 @@ export function FormFieldError({ id, children, errorIconAriaLabel }: FormFieldEr
         </span>
       </div>
 
-      <LiveRegion assertive={true} source={[i18nErrorIconAriaLabel, contentRef]} />
+      <InternalLiveRegion assertive={true} tagName="span" sources={[i18nErrorIconAriaLabel, contentRef]} />
     </>
   );
 }
@@ -84,7 +84,7 @@ export function FormFieldWarning({ id, children, warningIconAriaLabel }: FormFie
         </span>
       </div>
 
-      <LiveRegion assertive={true} source={[i18nWarningIconAriaLabel, contentRef]} />
+      <InternalLiveRegion assertive={true} tagName="span" sources={[i18nWarningIconAriaLabel, contentRef]} />
     </>
   );
 }
@@ -174,8 +174,8 @@ export default function InternalFormField({
 
   useEffect(() => {
     if (funnelInteractionId && errorText && funnelState.current !== 'complete') {
-      const stepName = getNameFromSelector(stepNameSelector);
-      const subStepName = getNameFromSelector(subStepNameSelector);
+      const stepName = getTextFromSelector(stepNameSelector);
+      const subStepName = getTextFromSelector(subStepNameSelector);
 
       errorCount.current++;
 

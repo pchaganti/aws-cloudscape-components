@@ -9,11 +9,17 @@ import { getAnalyticsMetadataAttribute } from '@cloudscape-design/component-tool
 import { InternalButton } from '../button/internal';
 import InternalHeader from '../header/internal';
 import { useInternalI18n } from '../i18n/context';
-import { FunnelNameSelectorContext } from '../internal/analytics/context/analytics-context';
-import { useFunnelSubStep } from '../internal/analytics/hooks/use-funnel';
+import { PerformanceMetrics } from '../internal/analytics';
+import {
+  FunnelNameSelectorContext,
+  FunnelStepContextValue,
+  FunnelSubStepContextValue,
+} from '../internal/analytics/context/analytics-context';
+import { FunnelProps, useFunnel, useFunnelStep, useFunnelSubStep } from '../internal/analytics/hooks/use-funnel';
 import { getBaseProps } from '../internal/base-component';
 import FocusLock from '../internal/components/focus-lock';
 import Portal from '../internal/components/portal';
+import { ButtonContext, ButtonContextProps } from '../internal/context/button-context';
 import { ModalContext } from '../internal/context/modal-context';
 import ResetContextsForModal from '../internal/context/reset-contexts-for-modal';
 import { fireNonCancelableEvent } from '../internal/events';
@@ -35,8 +41,39 @@ import { ModalProps } from './interfaces';
 import analyticsSelectors from './analytics-metadata/styles.css.js';
 import styles from './styles.css.js';
 
+export function InternalModalAsFunnel(props: InternalModalProps) {
+  const { funnelProps, funnelSubmit, funnelNextOrSubmitAttempt } = useFunnel();
+  const { funnelStepProps } = useFunnelStep();
+  const { subStepRef, funnelSubStepProps } = useFunnelSubStep();
+  const onButtonClick: ButtonContextProps['onClick'] = ({ variant }) => {
+    if (variant === 'primary') {
+      funnelNextOrSubmitAttempt();
+      funnelSubmit();
+    }
+  };
+
+  return (
+    <InternalModal
+      __funnelProps={funnelProps}
+      __funnelStepProps={funnelStepProps}
+      __subStepRef={subStepRef}
+      __subStepFunnelProps={funnelSubStepProps}
+      onButtonClick={onButtonClick}
+      {...props}
+    />
+  );
+}
+
 type InternalModalProps = SomeRequired<ModalProps, 'size'> &
-  InternalBaseComponentProps & { __injectAnalyticsComponentMetadata?: boolean };
+  InternalBaseComponentProps & {
+    __funnelProps?: FunnelProps;
+    __funnelStepProps?: FunnelStepContextValue['funnelStepProps'];
+    __subStepRef?: FunnelSubStepContextValue['subStepRef'];
+    __subStepFunnelProps?: FunnelSubStepContextValue['funnelSubStepProps'];
+    __injectAnalyticsComponentMetadata?: boolean;
+    onButtonClick?: ButtonContextProps['onClick'];
+    referrerId?: string;
+  };
 
 export default function InternalModal({ modalRoot, getModalRoot, removeModalRoot, ...rest }: InternalModalProps) {
   return (
@@ -57,9 +94,15 @@ function PortaledModal({
   children,
   footer,
   disableContentPaddings,
+  onButtonClick = () => {},
   onDismiss,
   __internalRootRef = null,
   __injectAnalyticsComponentMetadata,
+  __funnelProps,
+  __funnelStepProps,
+  __subStepRef,
+  __subStepFunnelProps,
+  referrerId,
   ...rest
 }: PortaledModalProps) {
   const instanceUniqueId = useUniqueId();
@@ -81,10 +124,13 @@ function PortaledModal({
     name: 'awsui.Modal',
     label: `.${analyticsSelectors.header} h2`,
   };
-
   const metadataAttribute = __injectAnalyticsComponentMetadata
     ? getAnalyticsMetadataAttribute({ component: analyticsComponentMetadata })
     : {};
+  const loadStartTime = useRef<number>(0);
+  const loadCompleteTime = useRef<number>(0);
+  const componentLoadingCount = useRef<number>(0);
+  const performanceMetricLogged = useRef<boolean>(false);
 
   // enable body scroll and restore focus if unmounting while visible
   useEffect(() => {
@@ -93,13 +139,46 @@ function PortaledModal({
     };
   }, []);
 
-  // enable / disable body scroll
+  const resetModalPerformanceData = () => {
+    loadStartTime.current = performance.now();
+    loadCompleteTime.current = 0;
+    performanceMetricLogged.current = false;
+  };
+
+  const emitTimeToContentReadyInModal = (loadCompleteTime: number) => {
+    if (
+      componentLoadingCount.current === 0 &&
+      loadStartTime.current &&
+      loadStartTime.current !== 0 &&
+      !performanceMetricLogged.current
+    ) {
+      const timeToContentReadyInModal = loadCompleteTime - loadStartTime.current;
+      PerformanceMetrics.modalPerformanceData({
+        timeToContentReadyInModal,
+        instanceIdentifier: instanceUniqueId,
+      });
+      performanceMetricLogged.current = true;
+    }
+  };
+
+  const MODAL_READY_TIMEOUT = 100;
+  /**
+   * This useEffect is triggered when the visible attribute of modal changes.
+   * When modal becomes visible, modal performance metrics are reset marking the beginning loading process.
+   * To ensure that the modal component ready metric is always emitted, a setTimeout is implemented.
+   * This setTimeout automatically emits the component ready metric after a specified duration.
+   */
   useEffect(() => {
     if (visible) {
       disableBodyScrolling();
+      resetModalPerformanceData();
+      setTimeout(() => {
+        emitTimeToContentReadyInModal(loadStartTime.current);
+      }, MODAL_READY_TIMEOUT);
     } else {
       enableBodyScrolling();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   // Because we hide the element with styles (and not actually detach it from DOM), we need to scroll to top
@@ -141,9 +220,17 @@ function PortaledModal({
   return (
     <FunnelNameSelectorContext.Provider value={`.${styles['header--text']}`}>
       <ResetContextsForModal>
-        <ModalContext.Provider value={{ isInModal: true }}>
+        <ModalContext.Provider
+          value={{
+            isInModal: true,
+            componentLoadingCount,
+            emitTimeToContentReadyInModal,
+          }}
+        >
           <div
             {...baseProps}
+            {...__funnelProps}
+            {...__funnelStepProps}
             className={clsx(
               styles.root,
               { [styles.hidden]: !visible },
@@ -157,7 +244,7 @@ function PortaledModal({
             onClick={onOverlayClick}
             ref={mergedRef}
             style={footerHeight ? { scrollPaddingBottom: footerHeight } : undefined}
-            data-awsui-referrer-id={subStepRef.current?.id}
+            data-awsui-referrer-id={subStepRef.current?.id || referrerId}
           >
             <FocusLock disabled={!visible} autoFocus={true} restoreFocus={true} className={styles['focus-lock']}>
               <div
@@ -197,14 +284,20 @@ function PortaledModal({
                       </span>
                     </InternalHeader>
                   </div>
-                  <div className={clsx(styles.content, { [styles['no-paddings']]: disableContentPaddings })}>
+                  <div
+                    ref={__subStepRef}
+                    {...__subStepFunnelProps}
+                    className={clsx(styles.content, { [styles['no-paddings']]: disableContentPaddings })}
+                  >
                     {children}
                     <div ref={stickySentinelRef} />
                   </div>
                   {footer && (
-                    <div ref={footerRef} className={clsx(styles.footer, footerStuck && styles['footer--stuck'])}>
-                      {footer}
-                    </div>
+                    <ButtonContext.Provider value={{ onClick: onButtonClick }}>
+                      <div ref={footerRef} className={clsx(styles.footer, footerStuck && styles['footer--stuck'])}>
+                        {footer}
+                      </div>
+                    </ButtonContext.Provider>
                   )}
                 </div>
               </div>

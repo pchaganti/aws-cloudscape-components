@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { useContainerQuery } from '@cloudscape-design/component-toolkit';
 import { useDensityMode } from '@cloudscape-design/component-toolkit/internal';
 
+import { getVisualContextClassname } from '../../internal/components/visual-context';
 import { AppLayoutProps } from '../interfaces';
 import { CloseButton, ToggleButton, togglesConfig } from '../toggles';
 import { TOOLS_DRAWER_ID } from '../utils/use-drawers';
@@ -82,7 +83,6 @@ export const Drawer = React.forwardRef(
         className={clsx(styles.drawer, {
           [styles.hide]: isHidden,
           [styles['drawer-closed']]: !isOpen,
-          [testutilStyles['drawer-closed']]: !isOpen,
           [styles['drawer-mobile']]: isMobile,
         })}
         style={{ width: drawerContentWidth }}
@@ -113,7 +113,9 @@ export const Drawer = React.forwardRef(
         <div
           id={id}
           style={{ width: drawerContentWidth, top: topOffset, bottom: bottomOffset }}
-          className={clsx(styles['drawer-content'], styles['drawer-content-clickable'], contentClassName)}
+          className={clsx(styles['drawer-content'], styles['drawer-content-clickable'], contentClassName, {
+            [testutilStyles['drawer-closed']]: !isOpen,
+          })}
         >
           {!isMobile && !hideOpenButton && regularOpenButton}
           <TagName
@@ -165,12 +167,19 @@ const DrawerTrigger = React.forwardRef(
     }: DrawerTriggerProps,
     ref: React.Ref<{ focus: () => void }>
   ) => (
-    <div className={clsx(styles['drawer-trigger'], isActive && styles['drawer-trigger-active'])} onClick={onClick}>
+    <div
+      className={clsx(
+        styles['drawer-trigger'],
+        isActive && styles['drawer-trigger-active'],
+        isActive && getVisualContextClassname('app-layout-tools-drawer-trigger')
+      )}
+      onClick={onClick}
+    >
       <ToggleButton
         ref={ref}
         className={testUtilsClassName}
-        iconName={trigger.iconName}
-        iconSvg={trigger.iconSvg}
+        iconName={trigger!.iconName}
+        iconSvg={trigger!.iconSvg}
         ariaLabel={ariaLabel}
         ariaExpanded={ariaExpanded}
         ariaControls={ariaControls}

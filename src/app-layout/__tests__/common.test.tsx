@@ -3,7 +3,7 @@
 /* eslint simple-import-sort/imports: 0 */
 import React from 'react';
 import { AppLayoutWrapper } from '../../../lib/components/test-utils/dom';
-import { describeEachAppLayout, isDrawerClosed, renderComponent, testDrawer, testDrawerWithoutLabels } from './utils';
+import { describeEachAppLayout, renderComponent, testDrawer, testDrawerWithoutLabels } from './utils';
 import AppLayout from '../../../lib/components/app-layout';
 
 jest.mock('@cloudscape-design/component-toolkit', () => ({
@@ -11,7 +11,7 @@ jest.mock('@cloudscape-design/component-toolkit', () => ({
   useContainerQuery: () => [100, () => {}],
 }));
 
-describeEachAppLayout({ themes: ['classic', 'refresh'] }, ({ size }) => {
+describeEachAppLayout({ themes: ['classic', 'refresh', 'refresh-toolbar'] }, ({ theme, size }) => {
   test('Default state', () => {
     const { wrapper } = renderComponent(<AppLayout />);
 
@@ -46,6 +46,7 @@ describeEachAppLayout({ themes: ['classic', 'refresh'] }, ({ size }) => {
       expectedCallsOnMobileToggle: 2,
       findLandmarks: (wrapper: AppLayoutWrapper) => wrapper.findAll('nav'),
       findElement: (wrapper: AppLayoutWrapper) => wrapper.findNavigation(),
+      findOpenElement: (wrapper: AppLayoutWrapper) => wrapper.findOpenNavigationPanel(),
       findToggle: (wrapper: AppLayoutWrapper) => wrapper.findNavigationToggle(),
       findClose: (wrapper: AppLayoutWrapper) => wrapper.findNavigationClose(),
     },
@@ -56,6 +57,7 @@ describeEachAppLayout({ themes: ['classic', 'refresh'] }, ({ size }) => {
       expectedCallsOnMobileToggle: 1,
       findLandmarks: (wrapper: AppLayoutWrapper) => wrapper.findAll('aside'),
       findElement: (wrapper: AppLayoutWrapper) => wrapper.findTools(),
+      findOpenElement: (wrapper: AppLayoutWrapper) => wrapper.findOpenToolsPanel(),
       findToggle: (wrapper: AppLayoutWrapper) => wrapper.findToolsToggle(),
       findClose: (wrapper: AppLayoutWrapper) => wrapper.findToolsClose(),
     },
@@ -66,6 +68,7 @@ describeEachAppLayout({ themes: ['classic', 'refresh'] }, ({ size }) => {
       handler,
       expectedCallsOnMobileToggle,
       findElement,
+      findOpenElement,
       findLandmarks,
       findToggle,
       findClose,
@@ -122,13 +125,19 @@ describeEachAppLayout({ themes: ['classic', 'refresh'] }, ({ size }) => {
 
           const toggleElement = findToggle(wrapper).getElement();
 
-          if (landmarks[0].getElement().contains(toggleElement)) {
-            expect(landmarks[0].getElement()).toHaveAttribute('aria-hidden', 'false');
+          if (theme === 'refresh-toolbar') {
+            // toggles are always visible, no need to test for aria-hidden
+            expect(landmarks[0].getElement()).toContainElement(toggleElement);
             expect(landmarks[1].getElement()).toHaveAttribute('aria-hidden', 'true');
           } else {
-            expect(landmarks[1].getElement()).toContainElement(toggleElement);
-            expect(landmarks[1].getElement()).toHaveAttribute('aria-hidden', 'false');
-            expect(landmarks[0].getElement()).toHaveAttribute('aria-hidden', 'true');
+            if (landmarks[0].getElement().contains(toggleElement)) {
+              expect(landmarks[0].getElement()).toHaveAttribute('aria-hidden', 'false');
+              expect(landmarks[1].getElement()).toHaveAttribute('aria-hidden', 'true');
+            } else {
+              expect(landmarks[1].getElement()).toContainElement(toggleElement);
+              expect(landmarks[1].getElement()).toHaveAttribute('aria-hidden', 'false');
+              expect(landmarks[0].getElement()).toHaveAttribute('aria-hidden', 'true');
+            }
           }
         });
 
@@ -142,13 +151,19 @@ describeEachAppLayout({ themes: ['classic', 'refresh'] }, ({ size }) => {
           expect(landmarks).toHaveLength(2);
           const toggleElement = findToggle(wrapper).getElement();
 
-          if (landmarks[0].getElement().contains(toggleElement)) {
-            expect(landmarks[0].getElement()).toHaveAttribute('aria-hidden', 'true');
+          if (theme === 'refresh-toolbar') {
+            // toggles are always visible, no need to test for aria-hidden
+            expect(landmarks[0].getElement()).toContainElement(toggleElement);
             expect(landmarks[1].getElement()).toHaveAttribute('aria-hidden', 'false');
           } else {
-            expect(landmarks[1].getElement()).toContainElement(toggleElement);
-            expect(landmarks[1].getElement()).toHaveAttribute('aria-hidden', 'true');
-            expect(landmarks[0].getElement()).toHaveAttribute('aria-hidden', 'false');
+            if (landmarks[0].getElement().contains(toggleElement)) {
+              expect(landmarks[0].getElement()).toHaveAttribute('aria-hidden', 'true');
+              expect(landmarks[1].getElement()).toHaveAttribute('aria-hidden', 'false');
+            } else {
+              expect(landmarks[1].getElement()).toContainElement(toggleElement);
+              expect(landmarks[1].getElement()).toHaveAttribute('aria-hidden', 'true');
+              expect(landmarks[0].getElement()).toHaveAttribute('aria-hidden', 'false');
+            }
           }
         });
 
@@ -181,7 +196,10 @@ describeEachAppLayout({ themes: ['classic', 'refresh'] }, ({ size }) => {
 
           const { wrapper } = renderComponent(<AppLayout ariaLabels={labels} />);
           expect(findToggle(wrapper).getElement()).toHaveAttribute('aria-label', 'toggle');
-          expect(findLandmarks(wrapper)[0].getElement()).toHaveAttribute('aria-label', 'landmark');
+          expect(findLandmarks(wrapper)[theme === 'refresh-toolbar' ? 1 : 0].getElement()).toHaveAttribute(
+            'aria-label',
+            'landmark'
+          );
         });
 
         test('Close button does have a label if it is defined', () => {
@@ -205,13 +223,13 @@ describeEachAppLayout({ themes: ['classic', 'refresh'] }, ({ size }) => {
         test('Opens and closes drawer in uncontrolled mode', () => {
           // use content type with initial closed state for all drawers
           const { wrapper } = renderComponent(<AppLayout contentType="form" />);
-          expect(isDrawerClosed(findElement(wrapper))).toBe(true);
+          expect(findOpenElement(wrapper)).toBeFalsy();
 
           findToggle(wrapper).click();
-          expect(isDrawerClosed(findElement(wrapper))).toBe(false);
+          expect(findOpenElement(wrapper)).toBeTruthy();
 
           findClose(wrapper).click();
-          expect(isDrawerClosed(findElement(wrapper))).toBe(true);
+          expect(findOpenElement(wrapper)).toBeFalsy();
         });
 
         test('Moves focus between open and close buttons', () => {
@@ -229,6 +247,7 @@ describeEachAppLayout({ themes: ['classic', 'refresh'] }, ({ size }) => {
           const props = { [hideProp]: true };
           const { wrapper } = renderComponent(<AppLayout {...props} />);
           expect(findElement(wrapper)).toBeFalsy();
+          expect(() => findOpenElement(wrapper)).toThrow(/App Layout does not have .* content/);
           expect(findLandmarks(wrapper)).toHaveLength(0);
         });
       });

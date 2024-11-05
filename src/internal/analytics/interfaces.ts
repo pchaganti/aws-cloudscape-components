@@ -1,8 +1,8 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-export type FunnelType = 'single-page' | 'multi-page';
-export type FlowType = 'create' | 'edit' | 'home' | 'dashboard' | 'view-resource';
+export type FunnelType = 'single-page' | 'multi-page' | 'modal';
+export type FlowType = 'create' | 'edit' | 'delete' | 'home' | 'dashboard' | 'view-resource';
 export interface AnalyticsMetadata {
   instanceIdentifier?: string;
   flowType?: FlowType;
@@ -23,6 +23,8 @@ export interface FunnelErrorProps extends BaseFunnelProps {
 
 export interface FunnelStartProps extends Omit<BaseFunnelProps, 'funnelInteractionId'> {
   flowType?: FlowType;
+  resourceType?: string;
+  funnelName: string;
   funnelNameSelector: string;
   totalFunnelSteps: number;
   optionalStepNumbers: number[];
@@ -152,15 +154,71 @@ export interface IFunnelMetrics {
   externalLinkInteracted: FunnelMethod<FunnelLinkInteractionProps>;
 }
 
+// Interface for task completion method props
+export interface TaskCompletionDataProps {
+  // Time taken to respond to customers after customers submit the form
+  // in milliseconds
+  timeToRespondAfterFormSubmit: number;
+  // Unique identifier for the task aka funnelInteractionId.
+  // Default: ''
+  taskInteractionId: string;
+  // Task name identifier to identify the task aka funnelName
+  // Default: ''
+  taskIdentifier?: string;
+  // To identify create or edit flow
+  // Default: ''
+  taskFlowType?: string;
+  //"single-page" | "multi-page"
+  // Default: ''
+  taskType?: FunnelType;
+  // Additional metadata related to completion such as success or error
+  completionMetadata?: string;
+}
+
+export type TaskCompletionDataMethod = (props: TaskCompletionDataProps) => void;
+
 export interface IPerformanceMetrics {
   tableInteraction: TableInteractionMethod;
+  taskCompletionData: TaskCompletionDataMethod;
+  modalPerformanceData: ModalPerformanceDataMethod;
+}
+
+type JSONValue = string | number | boolean | null | undefined;
+export interface JSONObject {
+  [key: string]: JSONObject | JSONValue;
 }
 
 export interface ComponentMountedProps {
   componentName: string;
-  details: Record<string, string | boolean | number | undefined>;
+  taskInteractionId?: string;
+  componentConfiguration: JSONObject;
 }
+
+export interface ComponentUpdatedProps extends ComponentMountedProps {
+  taskInteractionId: string;
+  actionType: string;
+}
+
 export type ComponentMountedMethod = (props: ComponentMountedProps) => string;
+export type ComponentUpdatedMethod = (props: ComponentUpdatedProps) => void;
 export interface IComponentMetrics {
   componentMounted: ComponentMountedMethod;
+  componentUpdated: ComponentUpdatedMethod;
 }
+
+// Interface for modal metrics
+export interface ModalPerformanceDataProps {
+  // Time span from when the modal begins loading to when the primary button or modal has finished loading.
+  // in milliseconds
+  timeToContentReadyInModal: number;
+  // Unique instance identifier for the component.
+  // Default: ''
+  instanceIdentifier?: string;
+  // Component identifier like modal header which can be used to identify the modal
+  // Default: ''
+  componentIdentifier?: string;
+  // Additional metadata related to modal
+  modalMetadata?: string;
+}
+
+export type ModalPerformanceDataMethod = (props: ModalPerformanceDataProps) => void;

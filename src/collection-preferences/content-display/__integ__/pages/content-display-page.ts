@@ -10,12 +10,10 @@ export default class ContentDisplayPageObject extends CollectionPreferencesPageO
   }
 
   async expectAnnouncement(announcement: string) {
-    const liveRegion = await this.browser.$(
-      this.wrapper.findModal().findContentDisplayPreference().find('[aria-live="assertive"]').toSelector()
-    );
+    const liveRegion = await this.browser.$('[aria-live="assertive"]');
     // Using getHTML because getText returns an empty string if the live region is outside the viewport.
     // See https://webdriver.io/docs/api/element/getText/
-    return expect(liveRegion.getHTML(false)).resolves.toBe(announcement);
+    return this.waitForAssertion(() => expect(liveRegion.getHTML()).resolves.toContain(announcement));
   }
 
   findDragHandle(index = 0) {
@@ -28,8 +26,13 @@ export default class ContentDisplayPageObject extends CollectionPreferencesPageO
     return this.wrapper.findModal().findContentDisplayPreference().findOptions();
   }
 
-  focusDragHandle(index = 0) {
-    return this.keys(new Array(5 + index * 2).fill('Tab'));
+  async focusDragHandle(index = 0) {
+    const isSearchable = await this.isExisting(
+      this.wrapper.findModal().findContentDisplayPreference().findTextFilter().toSelector()
+    );
+    const offset = isSearchable ? 6 : 5;
+
+    return this.keys(new Array(offset + index * 2).fill('Tab'));
   }
 
   async openCollectionPreferencesModal() {

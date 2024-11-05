@@ -8,6 +8,7 @@ import { warnOnce } from '@cloudscape-design/component-toolkit/internal';
 import '../../__a11y__/to-validate-a11y';
 import FileUpload, { FileUploadProps } from '../../../lib/components/file-upload';
 import createWrapper from '../../../lib/components/test-utils/dom';
+import FileDropzoneWrapper from '../../../lib/components/test-utils/dom/internal/file-dropzone';
 
 import tokenListSelectors from '../../../lib/components/internal/components/token-list/styles.selectors.js';
 
@@ -68,6 +69,16 @@ function renderStateful(props: Partial<FileUploadProps> = {}) {
 function StatefulFileUpload({ value: initialValue = [], ...rest }: Partial<FileUploadProps>) {
   const [value, setValue] = useState(initialValue);
   return <FileUpload {...defaultProps} {...rest} value={value} onChange={event => setValue(event.detail.value)} />;
+}
+
+function createDragEvent(type: string, files = [file1, file2]) {
+  const event = new CustomEvent(type, { bubbles: true });
+  (event as any).dataTransfer = {
+    types: ['Files'],
+    files: type === 'drop' ? files : [],
+    items: files.map(() => ({ kind: 'file' })),
+  };
+  return event;
 }
 
 describe('FileUpload input', () => {
@@ -181,9 +192,24 @@ describe('FileUpload input', () => {
 
   test('file input fires onChange with files in details', () => {
     const wrapper = render({ multiple: true });
-    fireEvent(wrapper.findNativeInput().getElement(), new CustomEvent('change', { bubbles: true }));
+    const input = wrapper.findNativeInput().getElement();
+    Object.defineProperty(input, 'files', { value: [file1, file2] });
+    fireEvent(input, new CustomEvent('change', { bubbles: true }));
 
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ detail: { value: [] } }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ detail: { value: [file1, file2] } }));
+    // additional equality check, because `expect.objectContaining` above thinks file1 === file2
+    expect((onChange as jest.Mock).mock.lastCall[0].detail.value[0]).toBe(file1);
+    expect((onChange as jest.Mock).mock.lastCall[0].detail.value[1]).toBe(file2);
+  });
+
+  test('file input fires onChange with only the first file if not multiple', () => {
+    const wrapper = render({});
+    const input = wrapper.findNativeInput().getElement();
+    Object.defineProperty(input, 'files', { value: [file1, file2] });
+    fireEvent(input, new CustomEvent('change', { bubbles: true }));
+
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ detail: { value: [file1] } }));
+    expect((onChange as jest.Mock).mock.lastCall[0].detail.value[0]).toBe(file1);
   });
 });
 
@@ -320,6 +346,14 @@ describe('File upload tokens', () => {
     });
     expect(wrapper.findFileToken(1)!.getElement()).toHaveAccessibleDescription('Error 1');
     expect(wrapper.findFileToken(1)!.getElement()).not.toHaveAccessibleDescription('Warning 1');
+  });
+});
+
+describe('File upload dropzone', () => {
+  test('dropzone is rendered in component', () => {
+    const wrapper = render({ multiple: true });
+    fireEvent(document, createDragEvent('dragover'));
+    expect(wrapper.findByClassName(FileDropzoneWrapper.rootSelector)!.getElement()).toBeInTheDocument();
   });
 });
 

@@ -11,6 +11,8 @@ import { ButtonProps } from '../button/interfaces';
 import { useFormFieldContext } from '../contexts/form-field';
 import { ConstraintText, FormFieldError, FormFieldWarning } from '../form-field/internal';
 import { getBaseProps } from '../internal/base-component';
+import InternalFileDropzone, { useFilesDragging } from '../internal/components/file-dropzone';
+import InternalFileInput from '../internal/components/file-input';
 import TokenList from '../internal/components/token-list';
 import { fireNonCancelableEvent } from '../internal/events';
 import checkControlled from '../internal/hooks/check-controlled';
@@ -21,13 +23,11 @@ import { useUniqueId } from '../internal/hooks/use-unique-id';
 import { joinStrings } from '../internal/utils/strings';
 import InternalSpaceBetween from '../space-between/internal';
 import { Token } from '../token-group/token';
-import { Dropzone, useDropzoneVisible } from './dropzone';
-import FileInput from './file-input';
 import { FileOption } from './file-option';
 import { FileUploadProps } from './interfaces';
 
+import fileInputStyles from '../internal/components/file-input/styles.css.js';
 import tokenListStyles from '../internal/components/token-list/styles.css.js';
-import fileInputStyles from './file-input/styles.css.js';
 import styles from './styles.css.js';
 
 type InternalFileUploadProps = FileUploadProps & InternalBaseComponentProps;
@@ -65,7 +65,7 @@ function InternalFileUpload(
     },
     listItemSelector: `.${tokenListStyles['list-item']}`,
     showMoreSelector: `.${tokenListStyles.toggle}`,
-    fallbackSelector: `.${fileInputStyles['upload-input']}`,
+    fallbackSelector: `.${fileInputStyles['file-input']}`,
   });
 
   const baseProps = getBaseProps(restProps);
@@ -85,7 +85,7 @@ function InternalFileUpload(
   }
 
   const handleFilesChange = (newFiles: File[]) => {
-    const newValue = multiple ? [...value, ...newFiles] : newFiles[0] ? newFiles : [...value];
+    const newValue = multiple ? [...value, ...newFiles] : newFiles[0] ? newFiles.slice(0, 1) : [...value];
     fireNonCancelableEvent(onChange, { value: newValue });
   };
 
@@ -95,7 +95,7 @@ function InternalFileUpload(
     setNextFocusIndex(removeFileIndex);
   };
 
-  const isDropzoneVisible = useDropzoneVisible(multiple);
+  const { areFilesDragging } = useFilesDragging();
 
   const showWarning = warningText && !errorText;
 
@@ -123,22 +123,24 @@ function InternalFileUpload(
       ref={tokenListRef}
     >
       <InternalBox>
-        {isDropzoneVisible ? (
-          <Dropzone onChange={handleFilesChange}>{i18nStrings.dropzoneText(multiple)}</Dropzone>
+        {areFilesDragging ? (
+          <InternalFileDropzone onChange={event => handleFilesChange(event.detail.value)}>
+            {i18nStrings.dropzoneText(multiple)}
+          </InternalFileDropzone>
         ) : (
-          <FileInput
+          <InternalFileInput
             ref={ref}
             accept={accept}
             ariaRequired={ariaRequired}
             multiple={multiple}
-            onChange={handleFilesChange}
+            onChange={event => handleFilesChange(event.detail.value)}
             value={value}
             {...restProps}
             ariaDescribedby={ariaDescribedBy}
             invalid={invalid}
           >
             {i18nStrings.uploadButtonText(multiple)}
-          </FileInput>
+          </InternalFileInput>
         )}
 
         {(constraintText || errorText || warningText) && (

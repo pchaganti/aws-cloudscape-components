@@ -3,8 +3,12 @@
 
 import { useEffect, useRef } from 'react';
 
-import { PerformanceMetrics } from '../../analytics';
+import { ComponentMetrics, PerformanceMetrics } from '../../analytics';
+import { useFunnel } from '../../analytics/hooks/use-funnel';
+import { JSONObject } from '../../analytics/interfaces';
+import { useDOMAttribute } from '../use-dom-attribute';
 import { useEffectOnUpdate } from '../use-effect-on-update';
+import { useRandomId } from '../use-unique-id';
 
 /*
 If the last user interaction is more than this time ago, it is not considered
@@ -13,24 +17,49 @@ to be the cause of the current loading state.
 const USER_ACTION_TIME_LIMIT = 1_000;
 
 export interface UseTableInteractionMetricsProps {
+  elementRef: React.RefObject<HTMLElement>;
   instanceIdentifier: string | undefined;
   loading: boolean | undefined;
   itemCount: number;
   getComponentIdentifier: () => string | undefined;
+  getComponentConfiguration: () => JSONObject;
+  interactionMetadata: () => string;
 }
 
 export function useTableInteractionMetrics({
+  elementRef,
   itemCount,
   instanceIdentifier,
   getComponentIdentifier,
+  getComponentConfiguration,
   loading = false,
+  interactionMetadata,
 }: UseTableInteractionMetricsProps) {
+  const taskInteractionId = useRandomId();
+  const tableInteractionAttributes = useDOMAttribute(
+    elementRef,
+    'data-analytics-task-interaction-id',
+    taskInteractionId
+  );
+  const { isInFunnel } = useFunnel();
   const lastUserAction = useRef<{ name: string; time: number } | null>(null);
   const capturedUserAction = useRef<string | null>(null);
   const loadingStartTime = useRef<number | null>(null);
 
-  const metadata = useRef({ itemCount, getComponentIdentifier });
-  metadata.current = { itemCount, getComponentIdentifier };
+  const metadata = useRef({ itemCount, getComponentIdentifier, getComponentConfiguration, interactionMetadata });
+  metadata.current = { itemCount, getComponentIdentifier, getComponentConfiguration, interactionMetadata };
+
+  useEffect(() => {
+    if (isInFunnel) {
+      return;
+    }
+
+    ComponentMetrics.componentMounted({
+      taskInteractionId,
+      componentName: 'table',
+      componentConfiguration: metadata.current.getComponentConfiguration(),
+    });
+  }, [taskInteractionId, isInFunnel]);
 
   useEffect(() => {
     if (loading) {
@@ -52,15 +81,25 @@ export function useTableInteractionMetrics({
       PerformanceMetrics.tableInteraction({
         userAction: capturedUserAction.current ?? '',
         interactionTime: Math.round(loadingDuration),
-        interactionMetadata: undefined,
+        interactionMetadata: metadata.current.interactionMetadata(),
         componentIdentifier: metadata.current.getComponentIdentifier(),
         instanceIdentifier,
         noOfResourcesInTable: metadata.current.itemCount,
       });
+
+      if (!isInFunnel) {
+        ComponentMetrics.componentUpdated({
+          taskInteractionId,
+          componentName: 'table',
+          actionType: capturedUserAction.current ?? '',
+          componentConfiguration: metadata.current.getComponentConfiguration(),
+        });
+      }
     }
-  }, [instanceIdentifier, loading]);
+  }, [instanceIdentifier, loading, taskInteractionId, isInFunnel]);
 
   return {
+    tableInteractionAttributes,
     setLastUserAction: (name: string) => void (lastUserAction.current = { name, time: performance.now() }),
   };
 }

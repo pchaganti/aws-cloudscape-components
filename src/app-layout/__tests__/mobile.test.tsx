@@ -5,7 +5,6 @@ import React, { useState } from 'react';
 import { act, within } from '@testing-library/react';
 import {
   describeEachAppLayout,
-  isDrawerClosed,
   renderComponent,
   testDrawer,
   manyDrawers,
@@ -22,6 +21,7 @@ import iconStyles from '../../../lib/components/icon/styles.css.js';
 import testUtilsStyles from '../../../lib/components/app-layout/test-classes/styles.css.js';
 import toolbarStyles from '../../../lib/components/app-layout/visual-refresh-toolbar/toolbar/styles.css.js';
 import toolbarTriggerButtonStyles from '../../../lib/components/app-layout/visual-refresh-toolbar/toolbar/trigger-button/styles.css.js';
+import toolbarNotificationsStyles from '../../../lib/components/app-layout/visual-refresh-toolbar/notifications/styles.css.js';
 import toolbarSkeletonStyles from '../../../lib/components/app-layout/visual-refresh-toolbar/skeleton/styles.css.js';
 
 import visualRefreshRefactoredStyles from '../../../lib/components/app-layout/visual-refresh/styles.css.js';
@@ -75,6 +75,11 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
     'refresh-toolbar': toolbarSkeletonStyles['unfocusable-mobile'],
     classic: styles.unfocusable,
   }[theme];
+  const stickyNotificationsClassName = {
+    refresh: '', // does not exist in this design
+    'refresh-toolbar': toolbarNotificationsStyles['sticky-notifications'],
+    classic: `.${styles['notifications-sticky']}`,
+  };
 
   const triggerBadgeClassName =
     theme === 'refresh-toolbar' ? toolbarTriggerButtonStyles['trigger-badge-wrapper'] : iconStyles.badge;
@@ -87,8 +92,10 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
   test('Renders closed drawer state', () => {
     const { wrapper } = renderComponent(<AppLayout />);
     expect(document.body).not.toHaveClass(blockBodyScrollClassName);
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
-    expect(isDrawerClosed(wrapper.findTools())).toBe(true);
+    expect(wrapper.findNavigation()).toBeTruthy();
+    expect(wrapper.findOpenNavigationPanel()).toBeFalsy();
+    expect(wrapper.findTools()).toBeTruthy();
+    expect(wrapper.findOpenToolsPanel()).toBeFalsy();
     expect(wrapper.findNavigationToggle().getElement()).toBeEnabled();
     expect(wrapper.findToolsToggle().getElement()).toBeEnabled();
   });
@@ -106,7 +113,8 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
       />
     );
     // AppLayout forcely closes the navigation on the first load on mobile, so the main content is visible
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
+    expect(wrapper.findNavigation()).toBeTruthy();
+    expect(wrapper.findOpenNavigationPanel()).toBeFalsy();
   });
 
   test('AppLayout with uncontrolled navigation has navigation forcely closed on initial load', () => {
@@ -121,13 +129,14 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
       />
     );
     // AppLayout forcely closes the navigation on the first load on mobile, so the main content is visible
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
+    expect(wrapper.findNavigation()).toBeTruthy();
+    expect(wrapper.findOpenNavigationPanel()).toBeFalsy();
   });
 
   test('renders open navigation state', () => {
     const { wrapper } = renderComponent(<AppLayout navigationOpen={true} onNavigationChange={() => {}} />);
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(false);
-    expect(isDrawerClosed(wrapper.findTools())).toBe(true);
+    expect(wrapper.findOpenNavigationPanel()).toBeTruthy();
+    expect(wrapper.findOpenToolsPanel()).toBeFalsy();
     expect(document.body).toHaveClass(blockBodyScrollClassName);
     expect(wrapper.findNavigationToggle().getElement()).toBeDisabled();
     expect(wrapper.findToolsToggle().getElement()).toBeDisabled();
@@ -136,8 +145,8 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
   test('renders open tools state', () => {
     const { wrapper } = renderComponent(<AppLayout toolsOpen={true} onToolsChange={() => {}} />);
     expect(document.body).toHaveClass(blockBodyScrollClassName);
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
-    expect(isDrawerClosed(wrapper.findTools())).toBe(false);
+    expect(wrapper.findOpenNavigationPanel()).toBeFalsy();
+    expect(wrapper.findOpenToolsPanel()).toBeTruthy();
     expect(wrapper.findNavigationToggle().getElement()).toBeDisabled();
     expect(wrapper.findToolsToggle().getElement()).toBeDisabled();
   });
@@ -147,8 +156,8 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
       <AppLayout activeDrawerId={testDrawer.id} drawers={[testDrawer]} onDrawerChange={() => {}} />
     );
     expect(document.body).toHaveClass(blockBodyScrollClassName);
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
-    expect(isDrawerClosed(wrapper.findTools())).toBe(true);
+    expect(wrapper.findOpenNavigationPanel()).toBeFalsy();
+    expect(wrapper.findTools()).toBeFalsy();
     expect(wrapper.findActiveDrawer()).toBeTruthy();
   });
 
@@ -185,13 +194,13 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
       />
     );
     // AppLayout forcely closes the navigation on the first load on mobile, so the main content is visible
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
+    expect(wrapper.findOpenNavigationPanel()).toBeFalsy();
 
     wrapper.findNavigationToggle().click();
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(false);
+    expect(wrapper.findOpenNavigationPanel()).toBeTruthy();
 
     wrapper.findNavigation().find('a')!.click();
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
+    expect(wrapper.findOpenNavigationPanel()).toBeFalsy();
   });
 
   test('closes navigation when clicking on a link in the Side Navigation component', () => {
@@ -212,13 +221,13 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
       />
     );
     // AppLayout forcely closes the navigation on the first load on mobile, so the main content is visible
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
+    expect(wrapper.findOpenNavigationPanel()).toBeFalsy();
 
     wrapper.findNavigationToggle().click();
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(false);
+    expect(wrapper.findOpenNavigationPanel()).toBeTruthy();
 
     wrapper.findNavigation().find('a')!.click();
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
+    expect(wrapper.findOpenNavigationPanel()).toBeFalsy();
   });
 
   test('does not close navigation when anchor without href was clicked', () => {
@@ -234,13 +243,13 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
       />
     );
     // AppLayout forcely closes the navigation on the first load on mobile, so the main content is visible
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
+    expect(wrapper.findOpenNavigationPanel()).toBeFalsy();
 
     wrapper.findNavigationToggle().click();
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(false);
+    expect(wrapper.findOpenNavigationPanel()).toBeTruthy();
 
     wrapper.findNavigation().find('a')!.click();
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(false);
+    expect(wrapper.findOpenNavigationPanel()).toBeTruthy();
   });
 
   test('does not close navigation when other elements were clicked', () => {
@@ -256,13 +265,13 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
       />
     );
     // AppLayout forcely closes the navigation on the first load on mobile, so the main content is visible
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
+    expect(wrapper.findOpenNavigationPanel()).toBeFalsy();
 
     wrapper.findNavigationToggle().click();
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(false);
+    expect(wrapper.findOpenNavigationPanel()).toBeTruthy();
 
     wrapper.findNavigation().find('h1')!.click();
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(false);
+    expect(wrapper.findOpenNavigationPanel()).toBeTruthy();
   });
 
   test('does not close tools when clicking on any element', () => {
@@ -365,16 +374,17 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
     let ref: AppLayoutProps.Ref | null = null;
     const { wrapper } = renderComponent(<AppLayout ref={newRef => (ref = newRef)} />);
     wrapper.findNavigationToggle().click();
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(false);
+    expect(wrapper.findOpenNavigationPanel()).toBeTruthy();
     expect(wrapper.findNavigationClose().getElement()).toEqual(document.activeElement);
     act(() => ref!.closeNavigationIfNecessary());
-    expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
+    expect(wrapper.findOpenNavigationPanel()).toBeFalsy();
     expect(wrapper.findNavigationToggle().getElement()).toEqual(document.activeElement);
   });
 
-  test('Does not allow sticky notification on small screen', () => {
+  // not testable in refresh, because it is implemented with media query
+  (theme === 'refresh' ? test.skip : test)('Does not allow sticky notification on small screen', () => {
     const { wrapper } = renderComponent(<AppLayout notifications="Test" stickyNotifications={true} />);
-    expect(wrapper.find(`.${styles['notifications-sticky']}`)).toBeFalsy();
+    expect(wrapper.find(stickyNotificationsClassName[theme])).toBeFalsy();
   });
 
   describe('unfocusable content', () => {
@@ -546,7 +556,7 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
 
     test("ignores programatically opened navigation when it's hidden", () => {
       const { wrapper } = renderComponent(<AppLayout {...props} navigationOpen={true} navigationHide={true} />);
-      expect(isDrawerClosed(wrapper.findNavigation())).toBe(true);
+      expect(wrapper.findNavigation()).toBeFalsy();
       if (theme !== 'refresh-toolbar') {
         expect(wrapper.findByClassName(unfocusableClassName)).toBeFalsy();
       }
@@ -554,7 +564,7 @@ describeEachAppLayout({ sizes: ['mobile'] }, ({ theme }) => {
 
     test("ignores programatically opened tools when it's hidden", () => {
       const { wrapper } = renderComponent(<AppLayout {...props} toolsOpen={true} toolsHide={true} />);
-      expect(isDrawerClosed(wrapper.findTools())).toBe(true);
+      expect(wrapper.findTools()).toBeFalsy();
       if (theme !== 'refresh-toolbar') {
         expect(wrapper.findByClassName(unfocusableClassName)).toBeFalsy();
       }

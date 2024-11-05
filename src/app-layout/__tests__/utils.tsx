@@ -3,8 +3,8 @@
 import * as React from 'react';
 import { render } from '@testing-library/react';
 
-import { findUpUntil } from '@cloudscape-design/component-toolkit/dom';
 import { setGlobalFlag } from '@cloudscape-design/component-toolkit/internal/testing';
+import { ComponentWrapper } from '@cloudscape-design/test-utils-core/dom';
 
 import AppLayout, { AppLayoutProps } from '../../../lib/components/app-layout';
 import customCssProps from '../../../lib/components/internal/generated/custom-css-properties';
@@ -16,8 +16,6 @@ import createWrapper, { AppLayoutWrapper, ElementWrapper } from '../../../lib/co
 import testutilStyles from '../../../lib/components/app-layout/test-classes/styles.css.js';
 import visualRefreshStyles from '../../../lib/components/app-layout/visual-refresh/styles.css.js';
 import visualRefreshToolbarStyles from '../../../lib/components/app-layout/visual-refresh-toolbar/skeleton/styles.css.js';
-import visualRefreshToolbarTriggerButtonStyles from '../../../lib/components/app-layout/visual-refresh-toolbar/toolbar/trigger-button/styles.css.js';
-import iconStyles from '../../../lib/components/icon/styles.css.js';
 
 // Mock element queries result. Note that in order to work, this mock should be applied first, before the AppLayout is required
 jest.mock('../../../lib/components/internal/hooks/use-mobile', () => ({
@@ -92,15 +90,6 @@ export function describeEachAppLayout(
   }
 }
 
-export function isDrawerClosed(drawer: ElementWrapper) {
-  // The visibility class name we are attaching to the wrapping element,
-  // however the test-util points to the inner element, which has the scrollbar
-  return (
-    drawer === null ||
-    !!findUpUntil(drawer.getElement(), element => element.classList.contains(testutilStyles['drawer-closed']))
-  );
-}
-
 export function findActiveDrawerLandmark(wrapper: AppLayoutWrapper) {
   const drawer = wrapper.findActiveDrawer();
   if (!drawer) {
@@ -111,18 +100,6 @@ export function findActiveDrawerLandmark(wrapper: AppLayoutWrapper) {
     return drawer;
   }
   return drawer.find('aside');
-}
-
-export function isDrawerTriggerWithBadge(wrapper: AppLayoutWrapper, triggerId: string) {
-  const trigger = wrapper.findDrawerTriggerById(triggerId)!;
-  return (
-    // Visual refresh implementation
-    trigger.getElement().classList.contains(visualRefreshStyles.badge) ||
-    // Visual refresh toolbar implementation
-    trigger.getElement().classList.contains(visualRefreshToolbarTriggerButtonStyles.badge) ||
-    // Classic implementation
-    !!trigger.findByClassName(iconStyles.badge)
-  );
 }
 
 export function getActiveDrawerWidth(wrapper: AppLayoutWrapper): string {
@@ -199,3 +176,38 @@ export const manyDrawers: Array<AppLayoutProps.Drawer> = [
 export const manyDrawersWithBadges: Array<AppLayoutProps.Drawer> = Array.from({ length: 100 }, (_, index) =>
   getDrawerItem(`${index}`, true)
 );
+
+class AppLayoutDrawerWrapper extends ComponentWrapper {
+  isActive(): boolean {
+    return this.element.classList.contains(testutilStyles['active-drawer']);
+  }
+}
+
+export const getGlobalDrawersTestUtils = (wrapper: AppLayoutWrapper) => {
+  return {
+    findActiveDrawers(): Array<ElementWrapper> {
+      return wrapper.findAllByClassName(testutilStyles['active-drawer']);
+    },
+
+    findDrawerById(id: string): AppLayoutDrawerWrapper | null {
+      const element = wrapper.find(`[data-testid="awsui-app-layout-drawer-${id}"]`);
+      return element ? new AppLayoutDrawerWrapper(element.getElement()) : null;
+    },
+
+    findGlobalDrawersTriggers(): ElementWrapper<HTMLButtonElement>[] {
+      return wrapper.findAllByClassName<HTMLButtonElement>(testutilStyles['drawers-trigger-global']);
+    },
+
+    findResizeHandleByActiveDrawerId(id: string): ElementWrapper | null {
+      return wrapper.find(
+        `.${testutilStyles['active-drawer']}[data-testid="awsui-app-layout-drawer-${id}"] .${testutilStyles['drawers-slider']}`
+      );
+    },
+
+    findCloseButtonByActiveDrawerId(id: string): ElementWrapper | null {
+      return wrapper.find(
+        `.${testutilStyles['active-drawer']}[data-testid="awsui-app-layout-drawer-${id}"] .${testutilStyles['active-drawer-close-button']}`
+      );
+    },
+  };
+};

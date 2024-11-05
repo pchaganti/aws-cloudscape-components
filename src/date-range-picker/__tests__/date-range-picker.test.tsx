@@ -10,14 +10,16 @@ import DateRangePicker, { DateRangePickerProps } from '../../../lib/components/d
 import FormField from '../../../lib/components/form-field';
 import TestI18nProvider from '../../../lib/components/i18n/testing';
 import { NonCancelableEventHandler } from '../../../lib/components/internal/events';
+import { LiveRegionController } from '../../../lib/components/live-region/controller.js';
 import createWrapper from '../../../lib/components/test-utils/dom';
 import DateRangePickerWrapper from '../../../lib/components/test-utils/dom/date-range-picker';
 import { changeMode } from './change-mode';
 import { i18nStrings } from './i18n-strings';
 import { isValidRange } from './is-valid-range';
 
-import styles from '../../../lib/components/date-range-picker/styles.css.js';
 import segmentedStyles from '../../../lib/components/segmented-control/styles.css.js';
+
+LiveRegionController.defaultDelay = 0;
 
 jest.mock('@cloudscape-design/component-toolkit/internal', () => ({
   ...jest.requireActual('@cloudscape-design/component-toolkit/internal'),
@@ -256,7 +258,7 @@ describe('Date range picker', () => {
 
       wrapper.findDropdown()!.findApplyButton().click();
       expect(wrapper.findDropdown()!.findValidationError()?.getElement()).toHaveTextContent('10 is not allowed.');
-      expect(wrapper.findDropdown()!.findByClassName(styles['validation-section'])!.find('[aria-live]')).not.toBe(null);
+      expect(createWrapper().findAll('[aria-live]')[1]!.getElement()).toHaveTextContent('10 is not allowed.');
     });
 
     test('after rendering the error once, displays subsequent errors in real time', () => {
@@ -379,6 +381,30 @@ describe('Date range picker', () => {
       expect(warnOnce).toHaveBeenCalledWith(
         'DateRangePicker',
         'The provided value does not correspond to the current range selector mode. Reverting back to default.'
+      );
+    });
+  });
+
+  describe('isValidRange', () => {
+    beforeEach(() => Mockdate.set(new Date('2020-10-01T12:30:20')));
+    afterEach(() => Mockdate.reset());
+
+    test('calls isValidRange without time part when dateOnly is enabled', () => {
+      const isValidRange = jest.fn().mockReturnValue({ valid: false, errorMessage: 'Error' });
+      const { wrapper } = renderDateRangePicker({ ...defaultProps, dateOnly: true, isValidRange });
+      wrapper.openDropdown();
+      changeMode(wrapper, 'absolute');
+      // When endDate hasn't been selected
+      wrapper.findDropdown()!.findDateAt('left', 3, 4).click();
+      wrapper.findDropdown()!.findApplyButton().click();
+      expect(isValidRange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ type: 'absolute', startDate: '2020-09-16', endDate: '' })
+      );
+      // When full range has been selected
+      wrapper.findDropdown()!.findDateAt('right', 3, 4).click();
+      wrapper.findDropdown()!.findApplyButton().click();
+      expect(isValidRange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ type: 'absolute', startDate: '2020-09-16', endDate: '2020-10-14' })
       );
     });
   });

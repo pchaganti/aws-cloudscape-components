@@ -5,6 +5,7 @@ import React from 'react';
 import AppLayout from '~components/app-layout';
 import Header from '~components/header';
 import ScreenreaderOnly from '~components/internal/components/screenreader-only';
+import Link from '~components/link';
 import SpaceBetween from '~components/space-between';
 
 import { IframeWrapper } from '../utils/iframe-wrapper';
@@ -16,6 +17,7 @@ import * as toolsContent from './utils/tools-content';
 function InnerApp() {
   return (
     <AppLayout
+      {...{ __disableRuntimeDrawers: true }}
       data-testid="secondary-layout"
       ariaLabels={labels}
       breadcrumbs={<Breadcrumbs />}
@@ -25,6 +27,11 @@ function InnerApp() {
           <Header variant="h1" description="This page contains nested app layout instances with an iframe">
             Multiple app layouts with iframe
           </Header>
+
+          <Link external={true} href="#">
+            External link
+          </Link>
+
           <Containers />
         </SpaceBetween>
       }

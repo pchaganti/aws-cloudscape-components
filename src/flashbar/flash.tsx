@@ -12,7 +12,6 @@ import { InternalButton } from '../button/internal';
 import InternalIcon from '../icon/internal';
 import { DATA_ATTR_ANALYTICS_FLASHBAR } from '../internal/analytics/selectors';
 import { BasePropsWithAnalyticsMetadata, getAnalyticsMetadataProps } from '../internal/base-component';
-import LiveRegion from '../internal/components/live-region';
 import { getVisualContextClassname } from '../internal/components/visual-context';
 import { PACKAGE_VERSION } from '../internal/environment';
 import { useMergeRefs } from '../internal/hooks/use-merge-refs';
@@ -20,6 +19,7 @@ import { isDevelopment } from '../internal/is-development';
 import { awsuiPluginsInternal } from '../internal/plugins/api';
 import { createUseDiscoveredAction, createUseDiscoveredContent } from '../internal/plugins/helpers';
 import { throttle } from '../internal/utils/throttle';
+import InternalLiveRegion from '../live-region/internal';
 import InternalSpinner from '../spinner/internal';
 import { GeneratedAnalyticsMetadataFlashbarDismiss } from './analytics-metadata/interfaces';
 import { FlashbarProps } from './interfaces';
@@ -38,7 +38,7 @@ const ICON_TYPES = {
 } as const;
 
 const useDiscoveredAction = createUseDiscoveredAction(awsuiPluginsInternal.flashbar.onActionRegistered);
-const useDiscoveredContent = createUseDiscoveredContent('flash', awsuiPluginsInternal.flashContent.onContentRegistered);
+const useDiscoveredContent = createUseDiscoveredContent('flash', awsuiPluginsInternal.flashContent);
 
 function dismissButton(
   dismissLabel: FlashbarProps.MessageDefinition['dismissLabel'],
@@ -124,6 +124,7 @@ export const Flash = React.forwardRef(
     const contentRefObject = useRef<HTMLDivElement>(null);
     const { discoveredActions, headerRef: headerRefAction, contentRef: contentRefAction } = useDiscoveredAction(type);
     const {
+      initialHidden,
       headerReplacementType,
       contentReplacementType,
       headerRef: headerRefContent,
@@ -174,7 +175,8 @@ export const Flash = React.forwardRef(
             [styles.exiting]: transitionState === 'exiting',
             [styles.exited]: transitionState === 'exited',
           },
-          getVisualContextClassname(type === 'warning' && !loading ? 'flashbar-warning' : 'flashbar')
+          getVisualContextClassname(type === 'warning' && !loading ? 'flashbar-warning' : 'flashbar'),
+          initialHidden && styles['initial-hidden']
         )}
         {...analyticsAttributes}
       >
@@ -229,7 +231,9 @@ export const Flash = React.forwardRef(
           />
         </div>
         {dismissible && dismissButton(dismissLabel, handleDismiss)}
-        {ariaRole === 'status' && <LiveRegion source={[statusIconAriaLabel, headerRefObject, contentRefObject]} />}
+        {ariaRole === 'status' && (
+          <InternalLiveRegion sources={[statusIconAriaLabel, headerRefObject, contentRefObject]} />
+        )}
       </div>
     );
   }

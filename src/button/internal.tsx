@@ -13,10 +13,9 @@ import { useFunnel, useFunnelStep, useFunnelSubStep } from '../internal/analytic
 import {
   DATA_ATTR_FUNNEL_VALUE,
   getFunnelValueSelector,
-  getNameFromSelector,
   getSubStepAllSelector,
+  getTextFromSelector,
 } from '../internal/analytics/selectors';
-import LiveRegion from '../internal/components/live-region';
 import Tooltip from '../internal/components/tooltip/index.js';
 import { useButtonContext } from '../internal/context/button-context';
 import { useSingleTabStopNavigation } from '../internal/context/single-tab-stop-navigation-context';
@@ -25,9 +24,11 @@ import useForwardFocus from '../internal/hooks/forward-focus';
 import { InternalBaseComponentProps } from '../internal/hooks/use-base-component';
 import useHiddenDescription from '../internal/hooks/use-hidden-description';
 import { useMergeRefs } from '../internal/hooks/use-merge-refs';
+import { useModalContextLoadingButtonComponent } from '../internal/hooks/use-modal-component-analytics';
 import { usePerformanceMarks } from '../internal/hooks/use-performance-marks';
 import { useUniqueId } from '../internal/hooks/use-unique-id';
 import { checkSafeUrl } from '../internal/utils/check-safe-url';
+import InternalLiveRegion from '../live-region/internal';
 import { GeneratedAnalyticsMetadataButtonFragment } from './analytics-metadata/interfaces';
 import { ButtonIconProps, LeftIcon, RightIcon } from './icon-helper';
 import { ButtonProps } from './interfaces';
@@ -39,6 +40,7 @@ import testUtilStyles from './test-classes/styles.css.js';
 export type InternalButtonProps = Omit<ButtonProps, 'variant'> & {
   variant?: ButtonProps['variant'] | 'flashbar-icon' | 'breadcrumb-group' | 'menu-trigger' | 'modal-dismiss';
   badge?: boolean;
+  analyticsAction?: string;
   __nativeAttributes?:
     | (React.HTMLAttributes<HTMLAnchorElement> & React.HTMLAttributes<HTMLButtonElement>)
     | Record<`data-${string}`, string>;
@@ -84,6 +86,7 @@ export const InternalButton = React.forwardRef(
       __injectAnalyticsComponentMetadata = false,
       __title,
       __emitPerformanceMarks = true,
+      analyticsAction = 'click',
       ...props
     }: InternalButtonProps,
     ref: React.Ref<ButtonProps.Ref>
@@ -119,6 +122,7 @@ export const InternalButton = React.forwardRef(
       }),
       [loading, disabled]
     );
+    useModalContextLoadingButtonComponent(variant === 'primary', loading);
 
     const { targetProps, descriptionEl } = useHiddenDescription(disabledReason);
 
@@ -131,8 +135,8 @@ export const InternalButton = React.forwardRef(
         fireCancelableEvent(onFollow, { href, target }, event);
 
         if ((iconName === 'external' || target === '_blank') && funnelInteractionId) {
-          const stepName = getNameFromSelector(stepNameSelector);
-          const subStepName = getNameFromSelector(subStepNameSelector);
+          const stepName = getTextFromSelector(stepNameSelector);
+          const subStepName = getTextFromSelector(subStepNameSelector);
 
           FunnelMetrics.externalLinkInteracted({
             funnelInteractionId,
@@ -155,6 +159,7 @@ export const InternalButton = React.forwardRef(
 
     const buttonClass = clsx(props.className, styles.button, styles[`variant-${variant}`], {
       [styles.disabled]: isNotInteractive,
+      [styles['disabled-with-reason']]: isDisabledWithReason,
       [styles['button-no-wrap']]: !wrapText,
       [styles['button-no-text']]: !shouldHaveContent,
       [styles['full-width']]: shouldHaveContent && fullWidth,
@@ -164,13 +169,13 @@ export const InternalButton = React.forwardRef(
     const explicitTabIndex =
       __nativeAttributes && 'tabIndex' in __nativeAttributes ? __nativeAttributes.tabIndex : undefined;
     const { tabIndex } = useSingleTabStopNavigation(buttonRef, {
-      tabIndex: isAnchor && isNotInteractive ? -1 : explicitTabIndex,
+      tabIndex: isAnchor && isNotInteractive && !isDisabledWithReason ? -1 : explicitTabIndex,
     });
 
     const analyticsMetadata: GeneratedAnalyticsMetadataButtonFragment = disabled
       ? {}
       : {
-          action: 'click',
+          action: analyticsAction,
           detail: { label: { root: 'self' } },
         };
     if (__injectAnalyticsComponentMetadata) {
@@ -232,6 +237,22 @@ export const InternalButton = React.forwardRef(
       }
     }, [loading, loadingButtonCount]);
 
+    const disabledReasonProps = {
+      onFocus: isDisabledWithReason ? () => setShowTooltip(true) : undefined,
+      onBlur: isDisabledWithReason ? () => setShowTooltip(false) : undefined,
+      onMouseEnter: isDisabledWithReason ? () => setShowTooltip(true) : undefined,
+      onMouseLeave: isDisabledWithReason ? () => setShowTooltip(false) : undefined,
+      ...(isDisabledWithReason ? targetProps : {}),
+    };
+    const disabledReasonContent = (
+      <>
+        {descriptionEl}
+        {showTooltip && (
+          <Tooltip className={testUtilStyles['disabled-reason-tooltip']} trackRef={buttonRef} value={disabledReason!} />
+        )}
+      </>
+    );
+
     if (isAnchor) {
       return (
         // https://github.com/yannickcr/eslint-plugin-react/issues/2962
@@ -245,10 +266,16 @@ export const InternalButton = React.forwardRef(
             rel={rel ?? (target === '_blank' ? 'noopener noreferrer' : undefined)}
             aria-disabled={isNotInteractive ? true : undefined}
             download={download}
+            {...disabledReasonProps}
           >
             {buttonContent}
+            {isDisabledWithReason && disabledReasonContent}
           </a>
-          {loading && loadingText && <LiveRegion>{loadingText}</LiveRegion>}
+          {loading && loadingText && (
+            <InternalLiveRegion tagName="span" hidden={true}>
+              {loadingText}
+            </InternalLiveRegion>
+          )}
         </>
       );
     }
@@ -260,27 +287,16 @@ export const InternalButton = React.forwardRef(
           type={formAction === 'none' ? 'button' : 'submit'}
           disabled={disabled && !__focusable && !isDisabledWithReason}
           aria-disabled={hasAriaDisabled ? true : undefined}
-          onFocus={isDisabledWithReason ? () => setShowTooltip(true) : undefined}
-          onBlur={isDisabledWithReason ? () => setShowTooltip(false) : undefined}
-          onMouseEnter={isDisabledWithReason ? () => setShowTooltip(true) : undefined}
-          onMouseLeave={isDisabledWithReason ? () => setShowTooltip(false) : undefined}
-          {...(isDisabledWithReason ? targetProps : {})}
+          {...disabledReasonProps}
         >
           {buttonContent}
-          {isDisabledWithReason && (
-            <>
-              {descriptionEl}
-              {showTooltip && (
-                <Tooltip
-                  className={testUtilStyles['disabled-reason-tooltip']}
-                  trackRef={buttonRef}
-                  value={disabledReason!}
-                />
-              )}
-            </>
-          )}
+          {isDisabledWithReason && disabledReasonContent}
         </button>
-        {loading && loadingText && <LiveRegion>{loadingText}</LiveRegion>}
+        {loading && loadingText && (
+          <InternalLiveRegion tagName="span" hidden={true}>
+            {loadingText}
+          </InternalLiveRegion>
+        )}
       </>
     );
   }
